@@ -10,7 +10,7 @@ shares_0 = []
 shares_1 = []
 ZL = 2 ** L
 
-zeroshares = False #set this false to get random shares. 0 shares easier for debugging
+zeroshares = False #if false --> random shares. if true --> 0 shares (share_0 = original secret, share_1 = 0 array)
 
 for i in range(N):
     secrets.append(rand.randint(0,ZL))
