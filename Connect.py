@@ -1,4 +1,5 @@
 import socket;
+import pickle;
 class Connect:
     def __init__(self):
         self.address = '127.0.0.1'
@@ -8,18 +9,19 @@ class Connect:
             "p2" :8002
         }
 
-    def sendMyType(self,sendParty,value):
+    def sendShares(self,sendTo,value):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.connect((self.address, self.lookup.get(sendParty)))
-            s.send(bytes(str(value), 'utf8'))
+            pickled = pickle.dumps(value)
+            s.connect((self.address, self.lookup.get(sendTo)))
+            s.send(pickled)
 
-    def recvMyType(self,recvParty):
+    def recvShares(self,recvParty):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.bind((self.address, self.lookup.get(recvParty)))
             s.listen()
             conn, addr = s.accept()
             data = conn.recv(1024)
-            strings = str(data, 'utf8')
-            return(int(strings))
+            data_arr = pickle.loads(data)
+            return repr(data_arr)
 
         
