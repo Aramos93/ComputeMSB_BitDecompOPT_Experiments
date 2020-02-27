@@ -127,11 +127,7 @@ class Party:
 
         return MyType(r, is_zl=in_zl), MyType(x-r, is_zl=in_zl)
     
-    def dummyPC(self, x, r, beta):
-        print(x.x)
-        print(r.x)
-        print(beta.x)
-        
+    def dummyPC(self, x, r, beta):    
         return beta.x ^ (x.x > r.x) 
         
 
@@ -171,10 +167,14 @@ class Party:
             self.sendShares("p0", x_bit_arr_0); self.sendShares("p1", x_bit_arr_1)
             time.sleep(0.1)
             self.sendInt("p0", delta_0.x); self.sendInt("p1", delta_1.x)
+            time.sleep(0.1)
 
             n_prime = self.dummyPC(x, r-MyType(1), n_prime_prime)
+            n_prime_0, n_prime_1 = self.generateMyTypeShares(n_prime,False)
 
-            n_prime_0, n_prime_1 = self.generateMyTypeShares(n_prime)
+            self.sendInt("p0", n_prime_0); self.sendInt("p1", n_prime_1)
+            
+
         
      
 
