@@ -1,5 +1,6 @@
 import random
 import socket
+import sys
 import pickle
 import time 
 from ast import literal_eval
@@ -41,15 +42,50 @@ class Party:
     def __init__(self, partyName):
         # Connection Initialization
         self.address = '127.0.0.1'
-        self.lookup = {
-            "p0" :8000,
-            "p1" :8001,
-            "p2" :8002
-        }
-        self.socket1 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.socket2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.socket1.settimeout(30)
-        self.socket2.settimeout(30)
+
+        self.lookup = {  "p0_send_to_p1":2011,
+                    "p0_send_to_p2":2021,
+                    "p1_send_to_p0":2101,
+                    "p1_send_to_p2":2121,
+                    "p2_send_to_p0":2201,
+                    "p2_send_to_p1":2211,
+                    "p0_recv_from_p1":2010,
+                    "p0_recv_from_p2":2020,
+                    "p1_recv_from_p0":2100,
+                    "p1_recv_from_p2":2120,
+                    "p2_recv_from_p0":2200,
+                    "p2_recv_from_p1":2210
+                }
+        if(partyName == 0):
+            self.socket01send = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
+            self.socket01send.bind((self.address,self.lookup.get('p0_send_to_p1')))
+            self.socket01recv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.socket01recv.bind((self.address,self.lookup.get('p0_recv_from_p1')))
+            self.socket02send = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.socket02send.bind((self.address,self.lookup.get('p0_send_to_p2')))
+            self.socket02recv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.socket02recv.bind((self.address,self.lookup.get('p0_recv_from_p2')))
+
+        elif(partyName == 1):
+            self.socket10send = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.socket10send.bind((self.address,self.lookup.get('p1_send_to_p0')))
+            self.socket10recv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.socket10recv.bind((self.address,self.lookup.get('p1_recv_from_p0')))
+            self.socket12send = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.socket12send.bind((self.address,self.lookup.get('p1_send_to_p2')))
+            self.socket12recv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.socket12recv.bind((self.address,self.lookup.get('p1_recv_from_p2')))
+
+        elif(partyName == 2):
+            self.socket20send = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.socket20send.bind((self.address,self.lookup.get('p2_send_to_p0')))
+            self.socket20recv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.socket20recv.bind((self.address,self.lookup.get('p2_recv_from_p0')))
+            self.socket21send = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.socket21send.bind((self.address,self.lookup.get('p2_send_to_p1')))
+            self.socket21recv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.socket21recv.bind((self.address,self.lookup.get('p2_recv_from_p1')))
+        
         self.listenBuffer = []
         
         
@@ -78,56 +114,92 @@ class Party:
             data = listenSocket.recv(1024)
             self.listenBuffer.append(data)
 
+
+
     def connect(self, sendSocket, targetAddress, target, source):
         while True:
             try:
                 if(source == 0):
                     if(target == 1):
-                        sendSocket.connect((targetAddress,8001))
+                        sendSocket.connect((targetAddress,self.lookup.get("p1_recv_from_p0")))
                     elif(target == 2):
-                        sendSocket.connect((targetAddress,9000))
+                        sendSocket.connect((targetAddress,self.lookup.get("p2_recv_from_p0")))
+
                 elif(source == 1):
-                    sendSocket.connect((targetAddress,9001))
-                print("Connected succesfully")
-                break
-            except:
+                    if(target == 0):
+                        sendSocket.connect((targetAddress,self.lookup.get("p0_recv_from_p1")))
+                    elif(target == 2):
+                        sendSocket.connect((targetAddress,self.lookup.get("p2_recv_from_p1")))
+
+                elif(source == 2):
+                    if(target == 0):
+                        sendSocket.connect((targetAddress,self.lookup.get("p0_recv_from_p2")))
+                    elif(target == 1):
+                        sendSocket.connect((targetAddress,self.lookup.get("p1_recv_from_p2")))
+
+
+
+                print(source,"connected to",target)
+                return
+            except Exception as e:
+                print(str(e))
                 continue
     
     def setupCommunication(self):
         if(self.partyName == 0):
-            self.socket1.bind((self.address,7000))
-            self.socket2.bind((self.address,7001))
+            
 
-            thread1 = threading.Thread(target=self.connect,kwargs=dict(sendSocket=self.socket1,targetAddress=self.address,target=1,source=0))
+            thread1 = threading.Thread(target=self.connect,kwargs=dict(sendSocket=self.socket01send,targetAddress=self.address,target=1,source=0))
+            thread1.daemon = True
             thread1.start()
-            thread2 = threading.Thread(target=self.connect,kwargs=dict(sendSocket=self.socket2,targetAddress=self.address,target=2,source=0))
+
+            thread2 = threading.Thread(target=self.connect,kwargs=dict(sendSocket=self.socket02send,targetAddress=self.address,target=2,source=0))
+            thread2.daemon = True
             thread2.start()
+
+            thread3 = threading.Thread(target=self.listen,kwargs=dict(listenSocket=self.socket01recv))
+            thread3.daemon = True            
+            thread3.start()
+
+            thread4 = threading.Thread(target=self.listen,kwargs=dict(listenSocket=self.socket02recv))
+            thread4.daemon = True            
+            thread4.start()
 
         if(self.partyName == 1):
-            self.socket1.bind((self.address,8000))
-            self.socket2.bind((self.address,8001))
-
-            thread1 = threading.Thread(target=self.connect,kwargs=dict(sendSocket=self.socket1,targetAddress=self.address,target=2,source=1))
+           
+            thread1 = threading.Thread(target=self.connect,kwargs=dict(sendSocket=self.socket10send,targetAddress=self.address,target=0,source=1))
+            thread1.daemon = True
             thread1.start()
 
-            thread2 = threading.Thread(target=self.listen,kwargs=dict(listenSocket=self.socket2))
+            thread2 = threading.Thread(target=self.connect,kwargs=dict(sendSocket=self.socket12send,targetAddress=self.address,target=2,source=1))
+            thread2.daemon = True
             thread2.start()
-            #self.socket2.listen()
-            #self.socket2 , _ = self.socket2.accept()
+
+            thread3 = threading.Thread(target=self.listen,kwargs=dict(listenSocket=self.socket10recv))
+            thread3.daemon = True            
+            thread3.start()
+
+            thread4 = threading.Thread(target=self.listen,kwargs=dict(listenSocket=self.socket12recv))
+            thread4.daemon = True            
+            thread4.start()
+
         if(self.partyName == 2):
-            self.socket1.bind((self.address,9000))
-            self.socket2.bind((self.address,9001))
 
-
-            thread1 = threading.Thread(target=self.listen,kwargs=dict(listenSocket=self.socket1))
+            thread1 = threading.Thread(target=self.connect,kwargs=dict(sendSocket=self.socket20send,targetAddress=self.address,target=0,source=2))
+            thread1.daemon = True
             thread1.start()
-            
-            thread2 = threading.Thread(target=self.listen,kwargs=dict(listenSocket=self.socket2))
+
+            thread2 = threading.Thread(target=self.connect,kwargs=dict(sendSocket=self.socket21send,targetAddress=self.address,target=1,source=2))
+            thread2.daemon = True
             thread2.start()
-            #self.socket1.listen()
-            #self.socket1 , _ = self.socket1.accept()
-            #self.socket2.listen()
-            #self.socket2 , _ = self.socket2.accept()
+
+            thread3 = threading.Thread(target=self.listen,kwargs=dict(listenSocket=self.socket20recv))
+            thread3.daemon = True            
+            thread3.start()
+
+            thread4 = threading.Thread(target=self.listen,kwargs=dict(listenSocket=self.socket21recv))
+            thread4.daemon = True            
+            thread4.start()
         
     # Get actual values of shares from MyType's
     def getShareVals(self):
@@ -144,6 +216,7 @@ class Party:
     def sendShares(self, target, value):
         pickled = pickle.dumps(value)
         thread = threading.Thread(target=self.send,kwargs=dict(sendTo=target, value=pickled))
+        thread.daemon = True
         thread.start()
         #self.send(sendTo,pickled)
 
@@ -157,23 +230,23 @@ class Party:
                 return repr(data_arr)
 
     def send(self, sendTo, value):
-        if(self.partyName == 0):
-            if(sendTo == 1):
-                self.socket1.send(value)
-            elif(sendTo == 2):
-                self.socket2.send(value)
+        if(self.party == "p0"):
+            if(sendTo == "p1"):
+                self.socket01send.send(value)
+            elif(sendTo == "p2"):
+                self.socket02send.send(value)
 
-        elif(self.partyName == 1):
-            if(sendTo == 2):
-                self.socket1.send(value)
-            elif(sendTo == 0):
-                self.socket2.send(value)
+        elif(self.party == "p1"):
+            if(sendTo == "p2"):
+                self.socket12send.send(value)
+            elif(sendTo == "p0"):
+                self.socket10send.send(value)
 
-        else:
-            if(sendTo == 0):
-                self.socket1.send(value)
-            elif(sendTo == 1):
-                self.socket2.send(value)
+        elif(self.party == "p2"):
+            if(sendTo == "p0"):
+                self.socket20send.send(value)
+            elif(sendTo == "p1"):
+                self.socket21send.send(value)
 
     
     
@@ -181,6 +254,7 @@ class Party:
     def sendInt(self,target,value):
         intBytes = bytes(str(value), 'utf8')
         thread = threading.Thread(target=self.send,kwargs=dict(sendTo=target, value=intBytes))
+        thread.daemon = True
         thread.start()
         #self.send(sendTo,intBytes)
 
@@ -209,7 +283,6 @@ class Party:
         res =  MyType(0)
         if self.party == "p1":
             self.sendInt("p0", a.x)
-            time.sleep(0.1)
         if(self.party == "p0"):
             a_1 = self.recvInt(self.party)
             res = a + MyType(a_1)
@@ -258,7 +331,6 @@ class Party:
     def shareConvert(self, a=MyType(0)):
         if self.party == "p0" or self.party == "p1":
             rec = self.reconstruct2PCSingleInt(a) # This reconstruction is only to check value of a
-
         # Use same random seed to ensure all parties share same common randomness: r, r_0, r_1, n''
         random.seed(seed)
         n_prime_prime = MyType(random.randint(0,1))
@@ -308,9 +380,9 @@ class Party:
             delta_0, delta_1 = self.generateMyTypeShares(delta, False)
 
             self.sendShares("p0", x_bit_arr_0); self.sendShares("p1", x_bit_arr_1)
-            time.sleep(0.1)
+            #time.sleep(0.1)
             self.sendInt("p0", delta_0.x); self.sendInt("p1", delta_1.x)
-            time.sleep(0.1)
+            #time.sleep(0.1)
 
             n_prime = self.dummyPC(x, r-MyType(1), n_prime_prime)
             n_prime_0, n_prime_1 = self.generateMyTypeShares(n_prime,False)
@@ -335,7 +407,7 @@ class Party:
             r_0 = MyType(y_0.x - x_0.x, is_zl=False)  
             r_1 = MyType(self.recvInt("p0"), is_zl=False)   
             self.sendInt("p1", r_0.x)
-            time.sleep(0.1)             
+            #time.sleep(0.1)             
             r = MyType(r_0.x + r_1.x, is_zl=False)
 
             beta_prime_0 = MyType(self.recvInt("p0"))
@@ -358,7 +430,7 @@ class Party:
             y_1 = MyType(2*a.x, is_zl=False)    
             r_1 = MyType(y_1.x - x_1.x, is_zl=False)    
             self.sendInt("p0", r_1.x)
-            time.sleep(0.1)
+            #time.sleep(0.1)
             r_0 = MyType(self.recvInt("p1"), is_zl=False)     
             r = MyType(r_0.x + r_1.x, is_zl=False)
             self.sendInt("p2", r.x) #Doesn't actually happen in protocol, but p2 needs to dummy PC
@@ -386,11 +458,11 @@ class Party:
             # print(x_firstBit_0.x, x_firstBit_1.x)
           
             self.sendInt("p0", x_0.x); self.sendInt("p1", x_1.x)
-            time.sleep(0.1)
+            #time.sleep(0.1)
             self.sendShares("p0", x_bit_arr_0); self.sendShares("p1", x_bit_arr_1)
-            time.sleep(0.1)
+            #time.sleep(0.1)
             self.sendInt("p0", x_firstBit_0.x); self.sendInt("p1", x_firstBit_1.x)
-            time.sleep(0.1)
+            #time.sleep(0.1)
             r = MyType(self.recvInt("p2"), is_zl=False)
             
             beta_prime = self.dummyPC(x, r, beta)
@@ -411,7 +483,7 @@ class Party:
 parties = []
 p0 = Party(0); p1 = Party(1); p2 = Party(2)
 parties.append(p0); parties.append(p1)
-
+time.sleep(2)
 def test_MyType():
     testListInput = [8,20,16,0,-3]
     testListRes = []
@@ -439,14 +511,14 @@ def test_shareConvert():
 
         thread = threading.Thread(target=p2.shareConvert, args=())
         thread.start()
-        time.sleep(0.1)
+        #time.sleep(0.1)
 
         threads = [None]*len(parties)
         for i, p in enumerate(parties):
             #print(f"Before convert - {p.party} a: {p.shares[c].x}")
             threads[i] = threading.Thread(target=p.shareConvert, args=(p.shares[c],))
             threads[i].start()
-            time.sleep(0.1)
+            #time.sleep(0.1)
         
         for p,t in zip(parties, threads):
             t.join(2)
@@ -477,7 +549,7 @@ def test_computeMSB():
         #print(f"Before convert - {p.party} a: {p.shares[c].x}")
         threads[i] = threading.Thread(target=p.computeMSB, args=(p.converted_shares[0],))
         threads[i].start()
-        time.sleep(0.1)
+        #time.sleep(0.1)
     
     thread = threading.Thread(target=p2.computeMSB, args=())
     thread.start()
@@ -487,8 +559,40 @@ def test_computeMSB():
     thread.join(2)
     print("")
 
-#test_shareConvert()
+def test_connection():
+    p0.sendInt("p2",100)
+    print(p2.recvInt("p2"))
+    p0.sendInt("p2",1000)
+    print(p2.recvInt("p2"))
+    p0.sendInt("p1",200)
+    print(p1.recvInt("p1"))
+    p0.sendInt("p1",12200)
+    print(p1.recvInt("p2"))
+
+    p1.sendInt("p2",10330)
+    print(p2.recvInt("p2"))
+    p1.sendInt("p2",12200)
+    print(p2.recvInt("p2"))
+    p1.sendInt("p0",100)
+    print(p0.recvInt("p2"))
+    p1.sendInt("p0",100)
+    print(p0.recvInt("p2"))
+
+    p2.sendInt("p1",1033330)
+    print(p1.recvInt("p2"))
+    p2.sendInt("p1",122040)
+    print(p1.recvInt("p2"))
+    p2.sendInt("p0",10330)
+    print(p0.recvInt("p2"))
+    p2.sendInt("p0",1300)
+    print(p0.recvInt("p2"))
+
+    
+
+
+test_shareConvert()
 #test_computeMSB()
 #test_Party()    
 #test_reconstruct2PC()
 #test_MyType()
+#test_connection()
