@@ -46,6 +46,14 @@ class Party:
             "p1" :8001,
             "p2" :8002
         }
+        self.socket1 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.socket2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.socket1.settimeout(30)
+        self.socket2.settimeout(30)
+        self.listenBuffer = []
+        
+        
+
 
         # Party shares initialization
         if partyName > 2 or partyName < 0:
@@ -58,7 +66,69 @@ class Party:
             self.readFile(file1)
         elif partyName == 1:
             self.readFile(file2)
+        self.setupCommunication()
 
+
+
+
+    def listen(self, listenSocket):
+        listenSocket.listen()
+        listenSocket, _ = listenSocket.accept()
+        while True:
+            data = listenSocket.recv(1024)
+            self.listenBuffer.append(data)
+
+    def connect(self, sendSocket, targetAddress, target, source):
+        while True:
+            try:
+                if(source == 0):
+                    if(target == 1):
+                        sendSocket.connect((targetAddress,8001))
+                    elif(target == 2):
+                        sendSocket.connect((targetAddress,9000))
+                elif(source == 1):
+                    sendSocket.connect((targetAddress,9001))
+                print("Connected succesfully")
+                break
+            except:
+                continue
+    
+    def setupCommunication(self):
+        if(self.partyName == 0):
+            self.socket1.bind((self.address,7000))
+            self.socket2.bind((self.address,7001))
+
+            thread1 = threading.Thread(target=self.connect,kwargs=dict(sendSocket=self.socket1,targetAddress=self.address,target=1,source=0))
+            thread1.start()
+            thread2 = threading.Thread(target=self.connect,kwargs=dict(sendSocket=self.socket2,targetAddress=self.address,target=2,source=0))
+            thread2.start()
+
+        if(self.partyName == 1):
+            self.socket1.bind((self.address,8000))
+            self.socket2.bind((self.address,8001))
+
+            thread1 = threading.Thread(target=self.connect,kwargs=dict(sendSocket=self.socket1,targetAddress=self.address,target=2,source=1))
+            thread1.start()
+
+            thread2 = threading.Thread(target=self.listen,kwargs=dict(listenSocket=self.socket2))
+            thread2.start()
+            #self.socket2.listen()
+            #self.socket2 , _ = self.socket2.accept()
+        if(self.partyName == 2):
+            self.socket1.bind((self.address,9000))
+            self.socket2.bind((self.address,9001))
+
+
+            thread1 = threading.Thread(target=self.listen,kwargs=dict(listenSocket=self.socket1))
+            thread1.start()
+            
+            thread2 = threading.Thread(target=self.listen,kwargs=dict(listenSocket=self.socket2))
+            thread2.start()
+            #self.socket1.listen()
+            #self.socket1 , _ = self.socket1.accept()
+            #self.socket2.listen()
+            #self.socket2 , _ = self.socket2.accept()
+        
     # Get actual values of shares from MyType's
     def getShareVals(self):
         return [e.x for e in self.shares]
@@ -69,40 +139,60 @@ class Party:
         for line in f:
             self.shares.append(MyType(int(line.strip())))
 
-    
+   
     ################ Send and Receive shares ###################
-    def sendShares(self, sendTo, value):
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            pickled = pickle.dumps(value)
-            s.connect((self.address, self.lookup.get(sendTo)))
-            s.send(pickled)
+    def sendShares(self, target, value):
+        pickled = pickle.dumps(value)
+        thread = threading.Thread(target=self.send,kwargs=dict(sendTo=target, value=pickled))
+        thread.start()
+        #self.send(sendTo,pickled)
 
     def recvShares(self,recvParty):
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.bind((self.address, self.lookup.get(recvParty)))
-            s.listen()
-            conn, addr = s.accept()
-            data = conn.recv(1024)
-            data_arr = pickle.loads(data)
-            return repr(data_arr)
+        while True:
+            if(len(self.listenBuffer)==0):
+                continue
+            else:
+                data = self.listenBuffer.pop(0)
+                data_arr = pickle.loads(data)
+                return repr(data_arr)
+
+    def send(self, sendTo, value):
+        if(self.partyName == 0):
+            if(sendTo == 1):
+                self.socket1.send(value)
+            elif(sendTo == 2):
+                self.socket2.send(value)
+
+        elif(self.partyName == 1):
+            if(sendTo == 2):
+                self.socket1.send(value)
+            elif(sendTo == 0):
+                self.socket2.send(value)
+
+        else:
+            if(sendTo == 0):
+                self.socket1.send(value)
+            elif(sendTo == 1):
+                self.socket2.send(value)
+
     
     
     ############ Send and Receive single int ####################
-    def sendInt(self,sendTo,value):
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.connect((self.address, self.lookup.get(sendTo)))
-            s.send(bytes(str(value), 'utf8'))
+    def sendInt(self,target,value):
+        intBytes = bytes(str(value), 'utf8')
+        thread = threading.Thread(target=self.send,kwargs=dict(sendTo=target, value=intBytes))
+        thread.start()
+        #self.send(sendTo,intBytes)
 
     def recvInt(self,recvParty):
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.bind((self.address, self.lookup.get(recvParty)))
-            s.listen()
-            conn, addr = s.accept()
-            data = conn.recv(1024)
-            strings = str(data, 'utf8')
-            return(int(strings))
-
-      
+        while True:
+            if(len(self.listenBuffer)==0):
+                continue
+            else:
+                data = self.listenBuffer.pop(0)
+                strings = str(data, 'utf8')
+                return(int(strings))
+        
     
     # Reconstruct secret by sending shares from p1 to p0 and adding them and printing them
     def reconstruct2PC(self):
@@ -336,7 +426,7 @@ def test_computeMSB():
     print("")
 
 #test_shareConvert()
-test_computeMSB()
+#test_computeMSB()
 #test_Party()    
 #test_reconstruct2PC()
 #test_MyType()
