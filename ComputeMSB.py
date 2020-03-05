@@ -250,6 +250,9 @@ class Party:
     # Mimic private compare - actually just compares reconstructed value
     def dummyPC(self, x, r, beta):   
         return beta.x ^ (x.x > r.x) 
+    
+    def dummyMatMult(self, a, b):
+        return a.x * b.x
         
     # Convert a shares of some value a in ZL to shares of the same value in ZL-1
     def shareConvert(self, a=MyType(0)):
@@ -300,9 +303,8 @@ class Party:
             a_tilde_1 = MyType(self.recvInt("p2"))
             x = a_tilde_0 + a_tilde_1
             delta = self.wrap(a_tilde_0, a_tilde_1)
-
-            bin_x = self.convertToBitString(x)
-            x_bit_arr_0, x_bit_arr_1 = self.generateBitShares(bin_x)
+ 
+            x_bit_arr_0, x_bit_arr_1 = self.generateBitShares(self.convertToBitString(x))
             delta_0, delta_1 = self.generateMyTypeShares(delta, False)
 
             self.sendShares("p0", x_bit_arr_0); self.sendShares("p1", x_bit_arr_1)
@@ -326,16 +328,76 @@ class Party:
         if self.party == "p0":
             if rec.x >= ((2**L) - 1):
                 raise Exception(f"Reconstructed value 'a' is {rec.x} which is NOT in ZL-1 {(2**L) -1}")
-            #x_0 = self.recvInt("p0")
-            #x_bit_arr_0 = self.recvShares("p0")
-            #x_firstBit_0 = self.recvInt("p0")
-        #if self.party == "p1":
-            #x_1 = self.recvInt("p1")
-            #x_bit_arr_1 = self.recvShares("p1")
-            #x_firstBit_1 = self.recvInt("p1")
+            x_0 = MyType(self.recvInt("p0"), is_zl=False)   
+            x_bit_arr_0 = self.recvShares("p0")
+            x_firstBit_0 = self.recvInt("p0")
+            y_0 = MyType(2*a.x, is_zl=False) 
+            r_0 = MyType(y_0.x - x_0.x, is_zl=False)  
+            r_1 = MyType(self.recvInt("p0"), is_zl=False)   
+            self.sendInt("p1", r_0.x)
+            time.sleep(0.1)             
+            r = MyType(r_0.x + r_1.x, is_zl=False)
+
+            beta_prime_0 = MyType(self.recvInt("p0"))
+            gamma_0 = MyType(beta_prime_0.x + self.partyName * beta.x - 2 * beta.x * beta_prime_0.x)
+            delta_0 = MyType(x_firstBit_0 + self.partyName * bin(r.x)[-1] - 2 * bin(r.x)[-1] * x_firstBit_0)
+
+
+           
+            print("p0 a: ", a.x)
+            print("p0 x_0: ", x_0.x)
+            print("p0 y_0: ", y_0.x)
+            print("p0 r_0: ", r_0.x)
+            print("p0 r_1: ", r_1.x)
+            print("p0 r: ", r.x)
+
+        if self.party == "p1":      
+            x_1 = MyType(self.recvInt("p1"), is_zl=False) 
+            x_bit_arr_1 = self.recvShares("p1")
+            x_firstBit_1 = self.recvInt("p1")
+            y_1 = MyType(2*a.x, is_zl=False)    
+            r_1 = MyType(y_1.x - x_1.x, is_zl=False)    
+            self.sendInt("p0", r_1.x)
+            time.sleep(0.1)
+            r_0 = MyType(self.recvInt("p1"), is_zl=False)     
+            r = MyType(r_0.x + r_1.x, is_zl=False)
+            self.sendInt("p2", r.x) #Doesn't actually happen in protocol, but p2 needs to dummy PC
+
+            beta_prime_1 = MyType(self.recvInt("p1"))
+            
+            print("p1 a: ", a.x)
+            print("p1 x_1: ", x_1.x)
+            print("p1 y_1: ", y_1.x)
+            print("p1 r_1: ", r_1.x)
+            print("p1 r_0: ", r_0.x)
+            print("p1 r: ", r.x)
+
         if self.party == "p2":
-            x = MyType(random.randint(0, (2**L) - 1), is_zl=False)
-            print(x.x)
+            #x = MyType(random.randint(0, (2**L) - 1), is_zl=False)
+            x = MyType(8, is_zl=False)
+            x_0, x_1 = self.generateMyTypeShares(x.x, in_zl=False)
+            bin_x = self.convertToBitString(x)
+            x_bit_arr_0, x_bit_arr_1 = self.generateBitShares(bin_x)
+            x_firstBit_0, x_firstBit_1 = self.generateMyTypeShares(int(bin_x[-1]))
+            # print(x.x)
+            # print(x_0.x,x_1.x)
+            # print(bin_x)
+            # print(x_bit_arr_0, x_bit_arr_1)
+            # print(x_firstBit_0.x, x_firstBit_1.x)
+          
+            self.sendInt("p0", x_0.x); self.sendInt("p1", x_1.x)
+            time.sleep(0.1)
+            self.sendShares("p0", x_bit_arr_0); self.sendShares("p1", x_bit_arr_1)
+            time.sleep(0.1)
+            self.sendInt("p0", x_firstBit_0.x); self.sendInt("p1", x_firstBit_1.x)
+            time.sleep(0.1)
+            r = MyType(self.recvInt("p2"), is_zl=False)
+            
+            beta_prime = self.dummyPC(x, r, beta)
+            beta_prime_0, beta_prime_1 = self.generateMyTypeShares(beta_prime)
+            self.sendInt("p0", beta_prime_0.x); self.sendInt("p1", beta_prime_1.x)
+
+
 
 
 
