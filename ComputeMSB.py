@@ -573,7 +573,7 @@ class Party:
         if self.party == "p0":
             a0 = self.convertToBitString(a)
             b0 = self.convertToBitString(MyType(0))
-            print("a0",a0)
+            #print("a0",a0)
 
             c = [None]*L
             x = [None]*L
@@ -590,16 +590,16 @@ class Party:
                 e[i] = ((int(a0[i]) * c[i+1])) % 2
                 c[i] = (self.mult(MyType(e[i]), MyType(d[i]))).x % 2
                 x[i] = (int(a0[i]) + c[i+1]) % 2
-            print("d:",d)
-            print("e:",e)
-            print("c:",c)
-            print("x",x)
-            print("")
+            # print("d:",d)
+            # print("e:",e)
+            # print("c:",c)
+            # print("x",x)
+            # print("")
             self.msbResults.append(x[0])
         if self.party == "p1":
             a1 = self.convertToBitString(MyType(0))
             b1 = self.convertToBitString(a)
-            print("b1",b1)
+            #print("b1",b1)
             c = [None]*L
             x = [None]*L
             d = [None]*L
@@ -614,11 +614,11 @@ class Party:
                 e[i] = ((int(b1[i]) * c[i+1]) +1) % 2
                 c[i] = (self.mult(MyType(e[i]), MyType(d[i])).x +1) % 2
                 x[i] = (int(b1[i]) + c[i+1]) % 2
-            time.sleep(0.8)
-            print("d:",d)
-            print("e:",e)
-            print("c:",c)
-            print("x",x)
+            #time.sleep(0.8)
+            # print("d:",d)
+            # print("e:",e)
+            # print("c:",c)
+            # print("x",x)
             self.msbResults.append(x[0])
         if self.party == "p2":
             for i in range(2*L):
