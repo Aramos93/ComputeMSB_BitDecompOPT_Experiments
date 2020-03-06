@@ -108,7 +108,7 @@ class Party:
 
 
 
-
+    #Function to listen and append data to listenBuffer when received.
     def listen(self, listenSocket):
         listenSocket.listen()
         listenSocket, _ = listenSocket.accept()
@@ -116,8 +116,7 @@ class Party:
             data = listenSocket.recv(1024)
             self.listenBuffer.append(data)
 
-
-
+    #Function to actively connect to a listening socket.
     def connect(self, sendSocket, targetAddress, target, source):
         while True:
             try:
@@ -147,6 +146,7 @@ class Party:
                 print(str(e))
                 continue
     
+    #Connects each socket with each other with connects/listens
     def setupCommunication(self):
         if(self.partyName == 0):
             
