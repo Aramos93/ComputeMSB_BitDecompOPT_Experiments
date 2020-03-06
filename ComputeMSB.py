@@ -593,18 +593,18 @@ def test_shareConvert():
 
         thread = threading.Thread(target=p2.shareConvert, args=())
         thread.start()
-        #time.sleep(0.1)
 
         threads = [None]*len(parties)
         for i, p in enumerate(parties):
             threads[i] = threading.Thread(target=p.shareConvert, args=(p.shares[c],))
             threads[i].start()
-            #time.sleep(0.1)
         
         for p,t in zip(parties, threads):
             t.join(2)
         thread.join(2)
-        #print("")
+    
+    print("##########################################################")
+    print("SHARECONVERT TEST")
     print("Shares in ZL")    
     print([s.x for s in p0.shares])
     print([s.x for s in p1.shares])
@@ -614,12 +614,13 @@ def test_shareConvert():
     print([s.x for s in p0.converted_shares])
     print([s.x for s in p1.converted_shares])
     print("Reconstructed: ", [MyType(s0.x+s1.x, is_zl=False).x for s0,s1 in zip(p0.converted_shares,p1.converted_shares)])
+    print("##########################################################")
+    print("")
 
 
 def test_computeMSB():
-    
-    p0.converted_shares = [MyType(2),MyType(1),MyType(3),MyType(7),MyType(10),MyType(2),MyType(3),MyType(7),MyType(5),MyType(11)]
-    p1.converted_shares = [MyType(10),MyType(7),MyType(11),MyType(14),MyType(5),MyType(12),MyType(12),MyType(0),MyType(10),MyType(7)]
+    p0.converted_shares = [MyType(10),MyType(1),MyType(3),MyType(7),MyType(10),MyType(2),MyType(3),MyType(7),MyType(5),MyType(11)]
+    p1.converted_shares = [MyType(2),MyType(7),MyType(11),MyType(14),MyType(5),MyType(12),MyType(12),MyType(0),MyType(10),MyType(7)]
         
     for c in range(len(p0.shares)):
         threads = [None]*len(parties)
@@ -635,17 +636,20 @@ def test_computeMSB():
             t.join(2)
         thread.join(2)
       
-
-
-    print("MSB inputs: ", [MyType(s0.x+s1.x, is_zl=False).x for s0,s1 in zip(p0.converted_shares,p1.converted_shares)])
-    print("MSB inputs in binary: ", [p0.convertToBitString(MyType(s0.x+s1.x,is_zl=False)) for s0,s1 in zip(p0.converted_shares,p1.converted_shares)])
-    print("MSB results")
-    print(len(p0.msbResults), len(p1.msbResults))
-    print("alpha0 values: ", [s.x for s in p0.msbResults])
-    print("alpha1 values: ", [s.x for s in p1.msbResults])
+    print("##########################################################")
+    print("MSB TEST")
+    print("Reconstructed inputs", [MyType(s0.x+s1.x, is_zl=False).x for s0,s1 in zip(p0.converted_shares,p1.converted_shares)])
+    print("Inputs in Binary: ", [p0.convertToBitString(MyType(s0.x+s1.x,is_zl=False)) for s0,s1 in zip(p0.converted_shares,p1.converted_shares)])
+    print("Results:")
+    print("alpha0 values (shares_0 of MSB): ", [s.x for s in p0.msbResults])
+    print("alpha1 values (shares_1 of MSB): ", [s.x for s in p1.msbResults])
     print("Reconstructed MSB: ", [MyType(s0.x+s1.x).x for s0,s1 in zip(p0.msbResults,p1.msbResults)])
+    print("#########################################################")
+    print("")
 
 def test_mult():
+    p0.shares = [MyType(2), MyType(4), MyType(2), MyType(3), MyType(8), MyType(4), MyType(9), MyType(0), MyType(10), MyType(1)]
+    p1.shares = [MyType(1), MyType(1), MyType(2), MyType(5), MyType(8), MyType(3), MyType(9), MyType(1), MyType(2), MyType(1)]
     for c in range(len(p0.shares)-1):
 
         threads = [None]*len(parties)
@@ -659,6 +663,17 @@ def test_mult():
         for t in threads:
             t.join(2)
         thread.join(2)
+    
+    print("##########################################################")
+    print("MULT TEST")
+    print("Reconstructed inputs (each value c multiplied with c+1)", [MyType(s0.x+s1.x).x for s0, s1 in zip(p0.shares, p1.shares)])
+    print("Results:")
+    print("Share 0 of result: ", [s.x for s in p0.matMultResults])
+    print("Share 1 of result: ", [s.x for s in p1.matMultResults])
+    print("Reconstructed results: ", [MyType(s0.x + s1.x).x for s0, s1 in zip(p0.matMultResults, p1.matMultResults)])
+    print("##########################################################")
+    print("")
+    
 
 def test_connection():
     p0.sendInt("p2",100)
@@ -691,9 +706,9 @@ def test_connection():
     
 
 
-#test_shareConvert()
-test_computeMSB()
-#test_mult()   
+# test_shareConvert()
+# test_computeMSB()
+test_mult()   
 #test_reconstruct2PC()
 #test_MyType()
 #test_connection()
