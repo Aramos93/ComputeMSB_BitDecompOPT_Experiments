@@ -219,14 +219,21 @@ class Party:
         thread.start()
         #self.send(sendTo,pickled)
 
-    def recvShares(self,recvParty):
+    def recvShares(self,recvParty, length=0):
         while True:
             if(len(self.listenBuffer)==0):
                 continue
             else:
                 data = self.listenBuffer.pop(0)
                 data_arr = pickle.loads(data)
-                return repr(data_arr)
+                if(length != 0):
+                    if (len(literal_eval(repr(data_arr))) == length):
+                        return repr(data_arr)
+                    else:
+                        self.listenBuffer.append(data)
+                        continue
+                else:
+                    return repr(data_arr)
 
     def send(self, sendTo, value):
         if(self.party == "p0"):
@@ -325,12 +332,13 @@ class Party:
     
     def mult(self, x=MyType(0), y=MyType(0)):
         if self.party == "p0":
-            shares_0 = literal_eval(self.recvShares("p0"))
+
+            shares_0 = literal_eval(self.recvShares("p0",3))
             a = shares_0[0]; b = shares_0[1]; c = shares_0[2]
             e_0 = MyType(x.x - a)
             f_0 = MyType(y.x - b)
             e_f_shares_0 = [e_0.x, f_0.x]
-            e_f_shares_1 = literal_eval(self.recvShares("p0"))
+            e_f_shares_1 = literal_eval(self.recvShares("p0",2))
             #print("e_f shares_0: ", e_f_shares_0)
             self.sendShares("p1", e_f_shares_0)
             #time.sleep(0.1) 
@@ -343,7 +351,7 @@ class Party:
             return x_mult_y_0
         
         if self.party == "p1":
-            shares_1 = literal_eval(self.recvShares("p1"))
+            shares_1 = literal_eval(self.recvShares("p1",3))
             a = shares_1[0]; b = shares_1[1]; c = shares_1[2]
             e_1 = MyType(x.x - a)
             f_1 = MyType(y.x - b)
@@ -352,7 +360,7 @@ class Party:
             # print("e_f shares_1: ", e_f_shares_1)
             self.sendShares("p0", e_f_shares_1)
             #time.sleep(0.1)
-            e_f_shares_0 = literal_eval(self.recvShares("p1"))    
+            e_f_shares_0 = literal_eval(self.recvShares("p1",2))    
             e_0 = e_f_shares_0[0]; f_0 = e_f_shares_0[1]
             #print("p1 e_0: ",e_0)
             e = MyType(e_0 + e_1.x); f = MyType(f_0 + f_1.x)
@@ -363,18 +371,18 @@ class Party:
             return x_mult_y_1
 
         if self.party == "p2":
-            a = MyType(random.randint(0,2**L))
-            b = MyType(random.randint(0,2**L))
+            # a = MyType(random.randint(0,2**L))
+            # b = MyType(random.randint(0,2**L))
+            # c = MyType(a.x*b.x)
+            a = MyType(15)
+            b = MyType(11)
             c = MyType(a.x*b.x)
-            # a = MyType(15)
-            # b = MyType(11)
-            # c = MyType(a.x+b.x)
             a_0, a_1 = self.generateMyTypeShares(a.x)
             b_0, b_1 = self.generateMyTypeShares(b.x)
             c_0, c_1 = self.generateMyTypeShares(c.x)
             #print(f"a, b, c: {a.x},{b.x},{c.x}")
-            shares_0 = [a_0.x, b_0.x, c_0.x]; shares_1 = [a_1.x, b_1.x, c_1.x]
-            #shares_0 = [3,10,2]; shares_1 = [12,1,3]
+            #shares_0 = [a_0.x, b_0.x, c_0.x]; shares_1 = [a_1.x, b_1.x, c_1.x]
+            shares_0 = [3,10,2]; shares_1 = [12,1,3]
            # print(f"abc_0: {shares_0}, abc_1: {shares_1}")
             self.sendShares("p0", shares_0); self.sendShares("p1", shares_1)
             #time.sleep(0.1)
@@ -561,6 +569,64 @@ class Party:
 
 
 
+    def bitDecomp(self, a=MyType(0)):
+        if self.party == "p0":
+            a0 = self.convertToBitString(a)
+            b0 = self.convertToBitString(MyType(0))
+            print("a0",a0)
+
+            c = [None]*L
+            x = [None]*L
+            d = [None]*L
+            e = [None]*L
+            
+            c[-1] = self.mult(MyType(int(a0[-1])),MyType(int(b0[-1]))).x % 2
+            x[-1] = int(a0[-1]) #not doing addition since other share is 0
+
+            for i in range(L-2,-1,-1):
+                d[i] = ((self.mult(MyType(int(a0[i])),MyType(int(b0[i]))).x)) % 2
+                #print("p0:d:",i,"d[i]",d[i])
+
+                e[i] = ((int(a0[i]) * c[i+1])) % 2
+                c[i] = (self.mult(MyType(e[i]), MyType(d[i]))).x % 2
+                x[i] = (int(a0[i]) + c[i+1]) % 2
+            print("d:",d)
+            print("e:",e)
+            print("c:",c)
+            print("x",x)
+            print("")
+            self.msbResults.append(x[0])
+        if self.party == "p1":
+            a1 = self.convertToBitString(MyType(0))
+            b1 = self.convertToBitString(a)
+            print("b1",b1)
+            c = [None]*L
+            x = [None]*L
+            d = [None]*L
+            e = [None]*L
+            
+            c[-1] = self.mult(MyType(int(a1[-1])),MyType(int(b1[-1]))).x % 2
+            x[-1] = int(b1[-1])
+
+            for i in range(L-2,-1,-1):
+                d[i] = ((self.mult(MyType(int(a1[i])),MyType(int(b1[i]))).x) +1) % 2 
+                #print("p1:d:",i,"d[i]",d[i])
+                e[i] = ((int(b1[i]) * c[i+1]) +1) % 2
+                c[i] = (self.mult(MyType(e[i]), MyType(d[i])).x +1) % 2
+                x[i] = (int(b1[i]) + c[i+1]) % 2
+            time.sleep(0.8)
+            print("d:",d)
+            print("e:",e)
+            print("c:",c)
+            print("x",x)
+            self.msbResults.append(x[0])
+        if self.party == "p2":
+            for i in range(2*L):
+                self.mult()
+
+
+
+
 
 
   
@@ -574,6 +640,9 @@ parties = []
 p0 = Party(0); p1 = Party(1); p2 = Party(2)
 parties.append(p0); parties.append(p1)
 time.sleep(2)
+
+
+
 def test_MyType():
     testListInput = [8,20,16,0,-3]
     testListRes = []
@@ -581,6 +650,36 @@ def test_MyType():
         testListRes.append(MyType(e).x)
     print(testListRes)
 
+def test_bitDecomp():
+    #p0.shares = [MyType(10)]
+    #p1.shares = [MyType(4)]
+    for c in range(len(p0.shares)):
+
+        thread = threading.Thread(target=p2.bitDecomp, args=())
+        thread.start()
+
+        threads = [None]*len(parties)
+        for i, p in enumerate(parties):
+            threads[i] = threading.Thread(target=p.bitDecomp, args=(p.shares[c],))
+            threads[i].start()
+        
+        for p,t in zip(parties, threads):
+            t.join(2)
+        thread.join(2)
+    time.sleep(0.2)
+    print("##########################################################")
+    print("BITDECOMP TEST")
+    print("Share_0 input: ", [s.x for s in p0.shares])
+    print("Share_1 input: ", [s.x for s in p1.shares])
+    print("Reconstructed inputs", [MyType(s0.x+s1.x).x for s0,s1 in zip(p0.shares,p1.shares)])
+    print("Inputs in Binary: ", [p0.convertToBitString(MyType(s0.x+s1.x)) for s0,s1 in zip(p0.shares,p1.shares)])
+    print("Results:")
+    print("alpha0 values (shares_0 of MSB): ", [s for s in p0.msbResults])
+    print("alpha1 values (shares_1 of MSB): ", [s for s in p1.msbResults])
+    print("Reconstructed MSB: ", [(s0+s1) % 2 for s0,s1 in zip(p0.msbResults,p1.msbResults)])
+    print("#########################################################")
+    print("")
+    
 
 def test_reconstruct2PC():
     print(p0.getShareVals()); print(p1.getShareVals())
@@ -705,10 +804,10 @@ def test_connection():
 
     
 
-
+test_bitDecomp()
 # test_shareConvert()
 # test_computeMSB()
-test_mult()   
+#test_mult()   
 #test_reconstruct2PC()
 #test_MyType()
 #test_connection()
