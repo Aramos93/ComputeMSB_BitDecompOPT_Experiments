@@ -583,7 +583,8 @@ def test_MyType():
 
 
 def test_reconstruct2PC():
-    print(p0.getShareVals()); print(p1.getShareVals())
+    print("p0 shares: ", p0.getShareVals()); 
+    print("p1 shares: ", p1.getShareVals())
     for p in parties:
         thread = threading.Thread(target=p.reconstruct2PC,args=())
         thread.start()
@@ -708,7 +709,7 @@ def test_connection():
 
 # test_shareConvert()
 # test_computeMSB()
-test_mult()   
-#test_reconstruct2PC()
+#test_mult()   
+test_reconstruct2PC()
 #test_MyType()
 #test_connection()
