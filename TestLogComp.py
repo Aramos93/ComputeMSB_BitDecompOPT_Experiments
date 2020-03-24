@@ -38,6 +38,7 @@ for i in range(6,-1,-1) :
     bobc_1_0.insert(0,b)
     alicec_1_1.insert(0,(a+alice1[i]+alice0[i])%2)
     bobc_1_1.insert(0,(b+bob1[i]+bob0[i])%2)
+
     alicex_1_0.insert(0,(alice1[i]+alice0[i])%2)
     alicex_1_1.insert(0,(alice1[i]+alice0[i])%2)
     bobx_1_0.insert(0,(bob1[i]+bob0[i])%2)
@@ -51,16 +52,15 @@ alicec_2_1 = [[toalice,alicec_1_0[7]]]
 bobc_2_0 = [[tobob,bobc_1_0[7]]]
 bobc_2_1 = [[tobob,bobc_1_0[7]]]
 
-for i in range(4,-1,-2) :
+for i in range(5,-1,-2) :
     a,b = multShares(alice0[i],alice1[i],bob0[i],bob1[i])
-
-    toalice = a^(alice0[i]*alicec_1_0[i+2])^(alice1[i]*alicec_1_0[i+2])
-    tobob = b^(bob0[i]*bobc_1_0[i+2])^(bob1[i]*bobc_1_0[i+2])
-    alicec_2_0.insert(0,[alicec_1_0[i],alicec_1_0[i+1]])
-    bobc_2_0.insert(0,[bobc_1_0[i],bobc_1_0[i+1]])
-
-    toalice = a^(alice0[i]*alicec_1_1[i+2])^(alice1[i]*alicec_1_1[i+2])
-    tobob = b^(bob0[i]*bobc_1_1[i+2])^(bob1[i]*bobc_1_1[i+2])
-    alicec_2_1.insert(0,[alicec_1_1[i],alicec_1_1[i+1]])
-    bobc_2_1.insert(0,[bobc_1_1[i],bobc_1_1[i+1]])
-        
+    toalice0 = a^(alice0[i]*alicec_1_0[i+1])^(alice1[i]*alicec_1_0[i+1])
+    tobob0 = b^(bob0[i]*bobc_1_0[i+1])^(bob1[i]*bobc_1_0[i+1])
+    toalice1 = a^(alice0[i]*alicec_1_1[i+1])^(alice1[i]*alicec_1_1[i+1])
+    tobob1 = b^(bob0[i]*bobc_1_1[i+1])^(bob1[i]*bobc_1_1[i+1])
+    
+    a,b = multShares(alice0[i-1],alice1[i-1],bob0[i-1],bob1[i-1])
+    alicec_2_0.insert(0,[(a^(alice0[i-1]*toalice0)^(alice1[i-1]*toalice0)),toalice0])
+    alicec_2_1.insert(0,[(a^(alice0[i-1]*toalice0)^(alice1[i-1]*toalice0)),toalice1])
+    bobc_2_0.insert(0,[(b^(bob0[i-1]*tobob0)^(bob1[i-1]*tobob0)),tobob0])
+    bobc_2_1.insert(0,[(b^(bob0[i-1]*tobob1)^(bob1[i-1]*tobob1)),tobob1])
