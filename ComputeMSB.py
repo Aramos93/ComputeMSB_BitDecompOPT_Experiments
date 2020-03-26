@@ -624,8 +624,24 @@ class Party:
             for i in range(2*L):
                 self.mult()
 
-
-
+    def bitDecompOpt(self, a=MyType(0)):
+        if self.party == "p0":
+            p0 = self.convertToBitString(a)
+            b0 = self.convertToBitString(MyType(0))
+            g0 = [None]*L
+            for i in range(len(p0)):
+                res = ((self.mult(MyType(int(p0[i])),MyType(int(b0[i]))).x)) % 2 
+                g0[i] = res
+        if self.party == "p1":
+            p1 = self.convertToBitString(a)
+            b1 = self.convertToBitString(MyType(0))
+            g1 = [None]*L
+            for i in range(len(p1)):
+                res = ((self.mult(MyType(int(p1[i])),MyType(int(b1[i]))).x)) % 2 
+                g1[i] = res
+        if self.party == "p2":
+            for i in range(2*L):
+                self.mult()
 
 
 
@@ -805,7 +821,7 @@ def test_connection():
 
     
 
-test_bitDecomp()
+#test_bitDecomp()
 # test_shareConvert()
 # test_computeMSB()
 #test_mult()   

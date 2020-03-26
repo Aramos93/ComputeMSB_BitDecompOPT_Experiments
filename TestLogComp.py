@@ -58,9 +58,12 @@ for i in range(5,-1,-2) :
     tobob0 = b^(bob0[i]*bobc_1_0[i+1])^(bob1[i]*bobc_1_0[i+1])
     toalice1 = a^(alice0[i]*alicec_1_1[i+1])^(alice1[i]*alicec_1_1[i+1])
     tobob1 = b^(bob0[i]*bobc_1_1[i+1])^(bob1[i]*bobc_1_1[i+1])
-    
     a,b = multShares(alice0[i-1],alice1[i-1],bob0[i-1],bob1[i-1])
     alicec_2_0.insert(0,[(a^(alice0[i-1]*toalice0)^(alice1[i-1]*toalice0)),toalice0])
-    alicec_2_1.insert(0,[(a^(alice0[i-1]*toalice0)^(alice1[i-1]*toalice0)),toalice1])
+    alicec_2_1.insert(0,[(a^(alice0[i-1]*toalice1)^(alice1[i-1]*toalice1)),toalice1])
     bobc_2_0.insert(0,[(b^(bob0[i-1]*tobob0)^(bob1[i-1]*tobob0)),tobob0])
     bobc_2_1.insert(0,[(b^(bob0[i-1]*tobob1)^(bob1[i-1]*tobob1)),tobob1])
+
+
+
+
