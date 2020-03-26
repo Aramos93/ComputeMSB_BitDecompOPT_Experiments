@@ -6,6 +6,7 @@ import time
 from ast import literal_eval
 import threading
 import time
+import numpy as np
 
 ##################################################### Globals ########################################################
 L = 4
@@ -16,6 +17,40 @@ file2 = "shares1.txt"
 
 ######################################################################################################################
 
+
+##################################################### Utilities ######################################################
+modularize = lambda t: t % 2**L 
+matmod = np.vectorize(modularize) 
+
+def generateMatrixShares(M):
+    M_0 = np.random.randint(2**L, size=(2,2))
+    M_1 = matmod(M - M_0)
+    return M_0, M_1
+
+
+
+def generateMatBeaverTriplets(N):
+    for _ in range(N):
+        A = np.random.randint(2**L, size=(2,2))
+        B = np.random.randint(2**L, size=(2,2))
+        # A = np.array([[1,1], [1, 1]])
+        # B = np.array([[1,1], [1,1]])
+        C = A @ B 
+        C = matmod(C)
+
+        # A_0 = np.array([[0,0], [0,0]])
+        # B_0 = np.array([[0,0], [0,0]])
+        # C_0 = np.array([[0,0], [0,0]])
+        
+        A_0, A_1 = generateMatrixShares(A)
+        B_0, B_1 = generateMatrixShares(B)
+        C_0, C_1 = generateMatrixShares(C)
+    
+        p0.triplets.append([A_0, B_0, C_0])
+        p1.triplets.append([A_1, B_1, C_1])
+
+
+######################################################################################################################
 
 ########################################## MyType (Convert number to ZL or ZL-1) #####################################
 class MyType:
@@ -98,8 +133,10 @@ class Party:
         self.partyName = partyName
         self.shares = []
         self.converted_shares = []
+        self.multResults = []
         self.matMultResults = []
         self.msbResults = []
+        self.triplets = []
         if partyName == 0:
             self.readFile(file1)
         elif partyName == 1:
@@ -210,6 +247,7 @@ class Party:
         for line in f:
             self.shares.append(MyType(int(line.strip())))
 
+    
    
     ################ Send and Receive shares ###################
     def sendShares(self, target, value):
@@ -328,7 +366,40 @@ class Party:
     
     # Mimic private compare - actually just compares reconstructed value
     def dummyPC(self, x, r, beta):   
-        return beta.x ^ (x.x > r.x) 
+        return beta.x ^ (x.x > r.x)
+
+    def matMult(self, X, Y):
+        if self.party == "p0":
+            A, B, C = self.triplets[0]; self.triplets.pop(0)
+            E_0 = matmod(X - A)
+            F_0 = matmod(Y - B)
+            toSend = [E_0.tolist(), F_0.tolist()]
+            self.sendShares("p1", toSend)
+            E_1, F_1 = literal_eval(self.recvShares("p0"))
+            E_1 = np.array(E_1); F_1 = np.array(F_1)
+            E = matmod(E_0 + E_1)
+            F = matmod(F_0 + F_1)
+
+            res = matmod((X @ F) + (E @ Y) + C) 
+            self.matMultResults.append(res)
+            return res
+            
+            
+        if self.party == "p1":
+            A, B, C = self.triplets[0]; self.triplets.pop(0)
+            E_1 = matmod(X - A)
+            F_1 = matmod(Y - B)
+            toSend = [E_1.tolist(), F_1.tolist()]
+            self.sendShares("p0", toSend)
+            E_0, F_0 = literal_eval(self.recvShares("p1"))
+            E_0 = np.array(E_0); F_0 = np.array(F_0)
+            E = matmod(E_0 + E_1)
+            F = matmod(F_0 + F_1)
+        
+            res = matmod(-1*(E @ F) + (X @ F) + (E @ Y) + C)
+            self.matMultResults.append(res)
+            return res
+
     
     def mult(self, x=MyType(0), y=MyType(0)):
         if self.party == "p0":
@@ -346,7 +417,7 @@ class Party:
             e = MyType(e_0.x + e_1); f = MyType(f_0.x + f_1)
             #print(f"p0 e and f: {e.x}, {f.x}")
             x_mult_y_0 = MyType(-self.partyName * e.x * f.x + x.x * f.x + e.x * y.x + c)
-            self.matMultResults.append(x_mult_y_0)
+            self.multResults.append(x_mult_y_0)
             #print("p0 x*y_0: ", x_mult_y_0.x)
             return x_mult_y_0
         
@@ -367,7 +438,7 @@ class Party:
             #print(f"p1 e and f: {e.x}, {f.x}")
             x_mult_y_1 = MyType(-self.partyName * e.x * f.x + x.x * f.x + e.x * y.x + c)
             #print("p1 x*y_1: ",x_mult_y_1.x)
-            self.matMultResults.append(x_mult_y_1)
+            self.multResults.append(x_mult_y_1)
             return x_mult_y_1
 
         if self.party == "p2":
@@ -387,8 +458,7 @@ class Party:
             self.sendShares("p0", shares_0); self.sendShares("p1", shares_1)
             #time.sleep(0.1)
 
-             
-        
+                
     # Convert a shares of some value a in ZL to shares of the same value in ZL-1
     def shareConvert(self, a=MyType(0)):
         if self.party == "p0" or self.party == "p1":
@@ -567,8 +637,6 @@ class Party:
             self.mult()
 
 
-
-
     def bitDecomp(self, a=MyType(0)):
         if self.party == "p0":
             a0 = self.convertToBitString(a)
@@ -655,9 +723,7 @@ class Party:
 parties = []
 p0 = Party(0); p1 = Party(1); p2 = Party(2)
 parties.append(p0); parties.append(p1)
-time.sleep(2)
-
-
+time.sleep(1)
 
 def test_MyType():
     testListInput = [8,20,16,0,-3]
@@ -698,7 +764,7 @@ def test_bitDecomp():
     
 
 def test_reconstruct2PC():
-    print("p0 shares: ", p0.getShareVals()); 
+    print("p0 shares: ", p0.getShareVals())
     print("p1 shares: ", p1.getShareVals())
     for p in parties:
         thread = threading.Thread(target=p.reconstruct2PC,args=())
@@ -784,12 +850,50 @@ def test_mult():
     print("MULT TEST")
     print("Reconstructed inputs (each value c multiplied with c+1)", [MyType(s0.x+s1.x).x for s0, s1 in zip(p0.shares, p1.shares)])
     print("Results:")
-    print("Share 0 of result: ", [s.x for s in p0.matMultResults])
-    print("Share 1 of result: ", [s.x for s in p1.matMultResults])
-    print("Reconstructed results: ", [MyType(s0.x + s1.x).x for s0, s1 in zip(p0.matMultResults, p1.matMultResults)])
+    print("Share 0 of result: ", [s.x for s in p0.multResults])
+    print("Share 1 of result: ", [s.x for s in p1.multResults])
+    print("Reconstructed results: ", [MyType(s0.x + s1.x).x for s0, s1 in zip(p0.multResults, p1.multResults)])
     print("##########################################################")
     print("")
+
+def test_matMult():
+    generateMatBeaverTriplets(1)
+    X = np.array([[1,2], [3,4]])
+    Y = np.array([[4,3], [2,1]])
+    # X_0 = np.array([[0,0], [0,0]])
+    # Y_0 = np.array([[0,0], [0,0]])
+    # X_1 = X
+    # Y_1 = Y
+    X_0, X_1 = generateMatrixShares(X)
+    Y_0, Y_1 = generateMatrixShares(Y)
+    p0.shares = [X_0, Y_0]
+    p1.shares = [X_1, Y_1]
     
+    for c in range(len(p0.shares)-1):
+        threads = [None]*len(parties)
+        for i, p in enumerate(parties):
+            threads[i] = threading.Thread(target=p.matMult, args=(p.shares[c], p.shares[c+1]))
+            threads[i].start()
+            time.sleep(0.1)
+    
+    for t in threads:
+        t.join(2)
+    
+    print("#######################################################")
+    print("MATMULT Test")
+    print("MATRIX X:", X)
+    print("Matrix Y:", Y)
+    print("Result XY:", [matmod(s0+s1) for s0, s1 in zip(p0.matMultResults, p1.matMultResults)])
+   
+
+
+        
+    
+    
+    
+
+
+
 
 def test_connection():
     p0.sendInt("p2",100)
@@ -820,7 +924,7 @@ def test_connection():
     print(p0.recvInt("p2"))
 
     
-
+test_matMult()
 #test_bitDecomp()
 # test_shareConvert()
 # test_computeMSB()
