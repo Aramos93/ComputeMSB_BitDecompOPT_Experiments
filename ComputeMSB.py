@@ -7,6 +7,8 @@ from ast import literal_eval
 import threading
 import time
 import numpy as np
+import ComposeNet
+
 
 ##################################################### Globals ########################################################
 L = 4
@@ -135,6 +137,7 @@ class Party:
         self.converted_shares = []
         self.multResults = []
         self.matMultResults = []
+        self.matMultListResults = []
         self.msbResults = []
         self.triplets = []
         if partyName == 0:
@@ -368,7 +371,7 @@ class Party:
     def dummyPC(self, x, r, beta):   
         return beta.x ^ (x.x > r.x)
 
-    def matMult(self, X, Y):
+    def matMult(self,X,Y):
         if self.party == "p0":
             A, B, C = self.triplets[0]; self.triplets.pop(0)
             E_0 = matmod(X - A)
@@ -399,6 +402,57 @@ class Party:
             res = matmod(-1*(E @ F) + (X @ F) + (E @ Y) + C)
             self.matMultResults.append(res)
             return res
+
+    
+    def matMultList(self, X, Y):
+        length = len(X)
+        if self.party == "p0":
+            A = [None]*length; B = [None]*length; C = [None]*length; 
+            for i in range(length):
+                a,b,c = self.triplets[0]
+                A.append(a); B.append(b); C.append(c)
+                self.triplets.pop(0)
+            E_0_list = [matmod(x - a).tolist() for x,a in zip(X,A)]
+            F_0_list = [matmod(y - b).tolist() for y,b in zip(Y,B)]
+            toSend = [E_0_list, F_0_list]
+            self.sendShares("p1", toSend)
+            E_1, F_1 = literal_eval(self.recvShares("p0"))
+            E_1_list = [np.array(e) for e in E_1]
+            F_1_list = [np.array(f) for f in F_1]
+            
+            
+            E = [matmod(e0 + e1) for e0,e1 in zip(E_0_list,E_1_list)]
+            F = [matmod(f0 + f1) for f0,f1 in zip(F_0_list,F_1_list)]
+
+            res = [matmod((x @ f) + (e @ y) + c) for x,f,e,y,c in zip(X,F,E,Y,C)]
+            self.matMultListResults.append(res)
+            return res
+            
+            
+        if self.party == "p1":
+            A = [None]*length; B = [None]*length; C = [None]*length; 
+            for i in range(length):
+                a,b,c = self.triplets[0]
+                A.append(a); B.append(b); C.append(c)
+                self.triplets.pop(0)
+
+            E_1_list = [matmod(x - a).tolist() for x,a in zip(X,A)]
+            F_1_list = [matmod(y - b).tolist() for y,b in zip(Y,B)]
+            toSend = [E_1_list, F_1_list]
+            self.sendShares("p0", toSend)
+            E_0, F_0 = literal_eval(self.recvShares("p1"))
+            E_0_list = [np.array(e) for e in E_0]
+            F_0_list = [np.array(f) for f in F_0]
+            
+            
+            E = [matmod(e0 + e1) for e0,e1 in zip(E_0_list,E_1_list)]
+            F = [matmod(f0 + f1) for f0,f1 in zip(F_0_list,F_1_list)]
+
+            res = [matmod(-1*(e @ f) + (x @ f) + (e @ y) + c) for x,f,e,y,c in zip(X,F,E,Y,C)]
+            self.matMultListResults.append(res)
+            return res
+
+
 
     
     def mult(self, x=MyType(0), y=MyType(0)):
@@ -693,13 +747,21 @@ class Party:
                 self.mult()
 
     def bitDecompOpt(self, a=MyType(0)):
+        cnet = ComposeNet(L)
         if self.party == "p0":
             p0 = self.convertToBitString(a)
             b0 = self.convertToBitString(MyType(0))
             g0 = [None]*L
-            for i in range(len(p0)):
+            for i in range(L):
                 res = ((self.mult(MyType(int(p0[i])),MyType(int(b0[i]))).x)) % 2 
                 g0[i] = res
+
+            M0 = [None]*L
+            for i in range(L):
+                M0[i] = np.array( [ [p0[i],g0[i]] , [0,0] ])
+                cnet.layers[1][i].matrix = M0[i]
+
+
         if self.party == "p1":
             p1 = self.convertToBitString(a)
             b1 = self.convertToBitString(MyType(0))
@@ -707,6 +769,13 @@ class Party:
             for i in range(len(p1)):
                 res = ((self.mult(MyType(int(p1[i])),MyType(int(b1[i]))).x)) % 2 
                 g1[i] = res
+            
+            M1 = [None]*L
+            for i in range(len(p1)):
+                M1[i] = np.array( [ [p1[i],g1[i]] , [0,1] ])
+                cnet.layers[1].matrix = M1[i]
+
+
         if self.party == "p2":
             for i in range(2*L):
                 self.mult()
@@ -885,7 +954,41 @@ def test_matMult():
     print("Matrix Y:", Y)
     print("Result XY:", [matmod(s0+s1) for s0, s1 in zip(p0.matMultResults, p1.matMultResults)])
    
+def test_matMultList():
+    generateMatBeaverTriplets(2)
+    X = np.array([[1,2], [3,4]])
+    Y = np.array([[4,3], [2,1]])
+    # X_0 = np.array([[0,0], [0,0]])
+    # Y_0 = np.array([[0,0], [0,0]])
+    # X_1 = X
+    # Y_1 = Y
+    X_0, X_1 = generateMatrixShares(X)
+    Y_0, Y_1 = generateMatrixShares(Y)
 
+    X_0 = [X_0]
+    X_1 = [X_1]
+    Y_0 = [Y_0]
+    Y_1 = [Y_1]
+    p0.shares = [X_0, Y_0]
+    p1.shares = [X_1, Y_1]
+
+    
+    for c in range(len(p0.shares)-1):
+        threads = [None]*len(parties)
+        for i, p in enumerate(parties):
+            threads[i] = threading.Thread(target=p.matMultList, args=(p.shares[c], p.shares[c+1]))
+            threads[i].start()
+            time.sleep(0.1)
+    
+    for t in threads:
+        t.join(2)
+    
+    print("#######################################################")
+    print("MATMULT Test")
+    print("MATRIX X:", X)
+    print("Matrix Y:", Y)
+    print("Result XY:", [matmod(s0+s1) for s0, s1 in zip(p0.matMultListResults[0], p1.matMultListResults[0])])
+   
 
         
     
@@ -895,7 +998,7 @@ def test_matMult():
 
 
 
-def test_connection():
+#def test_connection():
     p0.sendInt("p2",100)
     print(p2.recvInt("p2"))
     p0.sendInt("p2",1000)
@@ -922,9 +1025,9 @@ def test_connection():
     print(p0.recvInt("p2"))
     p2.sendInt("p0",1300)
     print(p0.recvInt("p2"))
-
+test_matMultList()
     
-test_matMult()
+#test_matMult()
 #test_bitDecomp()
 # test_shareConvert()
 # test_computeMSB()
