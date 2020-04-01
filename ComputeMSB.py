@@ -29,9 +29,29 @@ def generateMatrixShares(M):
     M_1 = matmod(M - M_0)
     return M_0, M_1
 
+# Generate shares in either ZL or Zl-1 of a number
+def generateMyTypeShares(x, in_zl=True):
+    if in_zl == True:
+        r = random.randint(0, 2**L)
+    else:
+        r = random.randint(0, (2**L)-1)
 
+    return MyType(r, is_zl=in_zl), MyType(x-r, is_zl=in_zl)
 
-def generateMatBeaverTriplets(N):
+def generateBeaverTriplets(N):
+    for _ in range(N):
+        a = random.randint(0, 2**L)
+        b = random.randint(0, 2**L)
+        c = (a * b) % 2**L
+        
+        a_0, a_1 = generateMyTypeShares(a)
+        b_0, b_1 = generateMyTypeShares(b)
+        c_0, c_1 = generateMyTypeShares(c)
+    
+        p0.triplets.append([a_0.x, b_0.x, c_0.x])
+        p1.triplets.append([a_1.x, b_1.x, c_1.x])
+
+def generateMatBeavermatTriplets(N):
     for _ in range(N):
         A = np.random.randint(2**L, size=(2,2))
         B = np.random.randint(2**L, size=(2,2))
@@ -48,8 +68,8 @@ def generateMatBeaverTriplets(N):
         B_0, B_1 = generateMatrixShares(B)
         C_0, C_1 = generateMatrixShares(C)
     
-        p0.triplets.append([A_0, B_0, C_0])
-        p1.triplets.append([A_1, B_1, C_1])
+        p0.matTriplets.append([A_0, B_0, C_0])
+        p1.matTriplets.append([A_1, B_1, C_1])
 
 
 ######################################################################################################################
@@ -136,9 +156,11 @@ class Party:
         self.shares = []
         self.converted_shares = []
         self.multResults = []
+        self.multListResults = []
         self.matMultResults = []
         self.matMultListResults = []
         self.msbResults = []
+        self.matTriplets = []
         self.triplets = []
         if partyName == 0:
             self.readFile(file1)
@@ -358,14 +380,7 @@ class Party:
 
         return share0, share1
     
-    # Generate shares in either ZL or Zl-1 of a number
-    def generateMyTypeShares(self, x, in_zl=True):
-        if in_zl == True:
-            r = random.randint(0, 2**L)
-        else:
-            r = random.randint(0, (2**L)-1)
-
-        return MyType(r, is_zl=in_zl), MyType(x-r, is_zl=in_zl)
+    
     
     # Mimic private compare - actually just compares reconstructed value
     def dummyPC(self, x, r, beta):   
@@ -373,7 +388,7 @@ class Party:
 
     def matMult(self,X,Y):
         if self.party == "p0":
-            A, B, C = self.triplets[0]; self.triplets.pop(0)
+            A, B, C = self.matTriplets[0]; self.matTriplets.pop(0)
             E_0 = matmod(X - A)
             F_0 = matmod(Y - B)
             toSend = [E_0.tolist(), F_0.tolist()]
@@ -389,7 +404,7 @@ class Party:
             
             
         if self.party == "p1":
-            A, B, C = self.triplets[0]; self.triplets.pop(0)
+            A, B, C = self.matTriplets[0]; self.matTriplets.pop(0)
             E_1 = matmod(X - A)
             F_1 = matmod(Y - B)
             toSend = [E_1.tolist(), F_1.tolist()]
@@ -409,7 +424,7 @@ class Party:
         if self.party == "p0":
             A = [None]*length; B = [None]*length; C = [None]*length; 
             for i in range(length):
-                a,b,c = self.triplets.pop(0)
+                a,b,c = self.matTriplets.pop(0)
                 A[i] = a; B[i] = b; C[i] = c
              
         
@@ -426,14 +441,14 @@ class Party:
             F = [matmod(f0 + f1) for f0,f1 in zip(F_0_list,F_1_list)]
 
             res = [matmod((x @ f) + (e @ y) + c) for x,f,e,y,c in zip(X,F,E,Y,C)]
-            self.matMultListResults.append(res)
+            self.matMultListResults = res
             return res
             
             
         if self.party == "p1":
             A = [None]*length; B = [None]*length; C = [None]*length; 
             for i in range(length):
-                a,b,c = self.triplets.pop(0)
+                a,b,c = self.matTriplets.pop(0)
                 A[i] = a; B[i] = b; C[i] = c
 
             E_1_list = [matmod(x - a).tolist() for x,a in zip(X,A)]
@@ -449,15 +464,11 @@ class Party:
             F = [matmod(f0 + f1) for f0,f1 in zip(F_0_list,F_1_list)]
 
             res = [matmod(-1*(e @ f) + (x @ f) + (e @ y) + c) for x,f,e,y,c in zip(X,F,E,Y,C)]
-            self.matMultListResults.append(res)
+            self.matMultListResults = res
             return res
 
-
-
-    
     def mult(self, x=MyType(0), y=MyType(0)):
         if self.party == "p0":
-
             shares_0 = literal_eval(self.recvShares("p0",3))
             a = shares_0[0]; b = shares_0[1]; c = shares_0[2]
             e_0 = MyType(x.x - a)
@@ -496,23 +507,67 @@ class Party:
             return x_mult_y_1
 
         if self.party == "p2":
-            # a = MyType(random.randint(0,2**L))
-            # b = MyType(random.randint(0,2**L))
-            # c = MyType(a.x*b.x)
-            a = MyType(15)
-            b = MyType(11)
+            a = MyType(random.randint(0,2**L))
+            b = MyType(random.randint(0,2**L))
             c = MyType(a.x*b.x)
-            a_0, a_1 = self.generateMyTypeShares(a.x)
-            b_0, b_1 = self.generateMyTypeShares(b.x)
-            c_0, c_1 = self.generateMyTypeShares(c.x)
+            # a = MyType(15)
+            # b = MyType(11)
+            c = MyType(a.x*b.x)
+            a_0, a_1 = generateMyTypeShares(a.x)
+            b_0, b_1 = generateMyTypeShares(b.x)
+            c_0, c_1 = generateMyTypeShares(c.x)
             #print(f"a, b, c: {a.x},{b.x},{c.x}")
-            #shares_0 = [a_0.x, b_0.x, c_0.x]; shares_1 = [a_1.x, b_1.x, c_1.x]
-            shares_0 = [3,10,2]; shares_1 = [12,1,3]
+            shares_0 = [a_0.x, b_0.x, c_0.x]; shares_1 = [a_1.x, b_1.x, c_1.x]
+            # shares_0 = [3,10,2]; shares_1 = [12,1,3]
            # print(f"abc_0: {shares_0}, abc_1: {shares_1}")
             self.sendShares("p0", shares_0); self.sendShares("p1", shares_1)
             #time.sleep(0.1)
 
-                
+    def multList(self, X, Y):
+        length = len(X)
+        if self.party == "p0":
+            A = [None]*length; B = [None]*length; C = [None]*length; 
+            for i in range(length):
+                a,b,c = self.triplets.pop(0)
+                A[i] = a; B[i] = b; C[i] = c
+             
+        
+            E_0_list = [MyType(x - a).x for x,a in zip(X,A)]
+            F_0_list = [MyType(y - b).x for y,b in zip(Y,B)]
+            toSend = [E_0_list, F_0_list]
+            self.sendShares("p1", toSend)
+            E_1_list, F_1_list = literal_eval(self.recvShares("p0"))
+               
+            E = [MyType(e0+e1).x for e0,e1 in zip(E_0_list,E_1_list)]
+            F = [MyType(f0+f1).x for f0,f1 in zip(F_0_list,F_1_list)]
+
+            res = [MyType((x*f) + (e*y) + c).x for x,f,e,y,c in zip(X,F,E,Y,C)]
+            self.multListResults.append(res)
+            print(res)
+            return res
+        if self.party == "p1":
+            A = [None]*length; B = [None]*length; C = [None]*length; 
+            for i in range(length):
+                a,b,c = self.triplets.pop(0)
+                A[i] = a; B[i] = b; C[i] = c    
+        
+            E_1_list = [MyType(x - a).x for x,a in zip(X,A)]
+            F_1_list = [MyType(y - b).x for y,b in zip(Y,B)]
+            toSend = [E_1_list, F_1_list]
+            self.sendShares("p0", toSend)
+            E_0_list, F_0_list = literal_eval(self.recvShares("p1"))
+               
+            E = [MyType(e0+e1).x for e0,e1 in zip(E_0_list,E_1_list)]
+            F = [MyType(f0+f1).x for f0,f1 in zip(F_0_list,F_1_list)]
+
+            res = [MyType(-1*(e * f) + (x * f) + (e * y) + c).x for x,f,e,y,c in zip(X,F,E,Y,C)]
+            self.multListResults.append(res)
+            print(res)
+            return res
+            
+  
+
+
     # Convert a shares of some value a in ZL to shares of the same value in ZL-1
     def shareConvert(self, a=MyType(0)):
         if self.party == "p0" or self.party == "p1":
@@ -522,7 +577,7 @@ class Party:
         n_prime_prime = MyType(random.randint(0,1))
         r = MyType(random.randint(1,2**L)) #can't be 0 for some reason. Probably handled in PC which we don't implement
 
-        r_0, r_1 = self.generateMyTypeShares(r.x)
+        r_0, r_1 = generateMyTypeShares(r.x)
         alpha = self.wrap(r_0, r_1)
         
         if(self.party == "p0"):
@@ -563,7 +618,7 @@ class Party:
             delta = self.wrap(a_tilde_0, a_tilde_1)
  
             x_bit_arr_0, x_bit_arr_1 = self.generateBitShares(self.convertToBitString(x))
-            delta_0, delta_1 = self.generateMyTypeShares(delta, False)
+            delta_0, delta_1 = generateMyTypeShares(delta, False)
 
             self.sendShares("p0", x_bit_arr_0); self.sendShares("p1", x_bit_arr_1)
             #time.sleep(0.1)
@@ -571,7 +626,7 @@ class Party:
             #time.sleep(0.1)
 
             n_prime = self.dummyPC(x, r-MyType(1), n_prime_prime)
-            n_prime_0, n_prime_1 = self.generateMyTypeShares(n_prime,False)
+            n_prime_0, n_prime_1 = generateMyTypeShares(n_prime,False)
            
 
             self.sendInt("p0", n_prime_0.x); self.sendInt("p1", n_prime_1.x)
@@ -664,11 +719,11 @@ class Party:
         if self.party == "p2":
             #x = MyType(random.randint(0, (2**L) - 1), is_zl=False)
             x = MyType(8, is_zl=False)
-            x_0, x_1 = self.generateMyTypeShares(x.x, in_zl=False)
+            x_0, x_1 = generateMyTypeShares(x.x, in_zl=False)
             #x_0, x_1 = MyType(12,is_zl=False), MyType(11,is_zl=False)
             bin_x = self.convertToBitString(x)
             x_bit_arr_0, x_bit_arr_1 = self.generateBitShares(bin_x)
-            x_firstBit_0, x_firstBit_1 = self.generateMyTypeShares(int(bin_x[-1]))
+            x_firstBit_0, x_firstBit_1 = generateMyTypeShares(int(bin_x[-1]))
             # print("x: ", x.x)
             # print(f"x_0: {x_0.x} x_1: {x_1.x}")
             # print("bin_x: ", bin_x)
@@ -685,7 +740,7 @@ class Party:
             #print("p2 r: ", r.x)
             beta_prime = self.dummyPC(x, r, beta)
             #print("beta': ",beta_prime)
-            beta_prime_0, beta_prime_1 = self.generateMyTypeShares(beta_prime)
+            beta_prime_0, beta_prime_1 = generateMyTypeShares(beta_prime)
             #print(f"beta'0: {beta_prime_0.x}, beta'1: {beta_prime_1.x}")
             self.sendInt("p0", beta_prime_0.x); self.sendInt("p1", beta_prime_1.x)
             self.mult()
@@ -822,7 +877,7 @@ class Party:
             
 
         if self.party == "p2":
-            for i in range(2*L):
+            for i in range(L):
                 self.mult()
 
 
@@ -943,6 +998,7 @@ def test_computeMSB():
     print("#########################################################")
     print("")
 
+
 def test_mult():
     p0.shares = [MyType(2), MyType(4), MyType(2), MyType(3), MyType(8), MyType(4), MyType(9), MyType(0), MyType(10), MyType(1)]
     p1.shares = [MyType(1), MyType(1), MyType(2), MyType(5), MyType(8), MyType(3), MyType(9), MyType(1), MyType(2), MyType(1)]
@@ -970,8 +1026,39 @@ def test_mult():
     print("##########################################################")
     print("")
 
+def test_multList():
+    generateBeaverTriplets(4)
+    X_0_list = [1, 2, 3, 4]
+    Y_0_list = [2, 3, 4, 5]
+    X_1_list = [0, 0, 0, 0]
+    Y_1_list = [0, 0, 0, 0]
+    p0.shares = [X_0_list, Y_0_list]
+    p1.shares = [X_1_list, Y_1_list]
+
+    for c in range(len(p0.shares)-1):
+        threads = [None]*len(parties)
+        for i, p in enumerate(parties):
+            threads[i] = threading.Thread(target=p.multList, args=(p.shares[c], p.shares[c+1]))
+            threads[i].start()
+        time.sleep(0.1)    
+        
+
+        for t in threads:
+            t.join(2)
+
+    
+    print("##########################################################")
+    print("MULTLIST TEST")
+    print("Reconstructed X inputs", [s0+s1 for s0, s1 in zip(X_0_list, X_1_list)])
+    print("Reconstructed Y inputs", [s0+s1 for s0, s1 in zip(Y_0_list, Y_1_list)])
+    print("Results:")
+
+    print("Result XY:", [MyType(s0+s1).x for s0, s1 in zip(p0.multListResults[0], p1.multListResults[0])])
+    print("##########################################################")
+    print("")
+
 def test_matMult():
-    generateMatBeaverTriplets(1)
+    generateMatBeavermatTriplets(1)
     X = np.array([[1,2], [3,4]])
     Y = np.array([[4,3], [2,1]])
     # X_0 = np.array([[0,0], [0,0]])
@@ -1000,7 +1087,7 @@ def test_matMult():
     print("Result XY:", [matmod(s0+s1) for s0, s1 in zip(p0.matMultResults, p1.matMultResults)])
    
 def test_matMultList():
-    generateMatBeaverTriplets(5)
+    generateMatBeavermatTriplets(5)
     X = np.array([[1,2], [3,4]])
     Y = np.array([[4,3], [2,1]])
     
@@ -1026,19 +1113,11 @@ def test_matMultList():
         t.join(2)
     
     print("#######################################################")
-    print("MATMULT Test")
+    print("MATMULTLIST Test")
     print("MATRIX X:", X)
     print("Matrix Y:", Y)
-    print("Result XY:", [matmod(s0+s1) for s0, s1 in zip(p0.matMultListResults[2], p1.matMultListResults[2])])
+    print("Result XY:", [matmod(s0+s1) for s0, s1 in zip(p0.matMultListResults[0], p1.matMultListResults[0])])
    
-
-        
-    
-    
-    
-
-
-
 
 def test_connection():
     p0.sendInt("p2",100)
@@ -1074,6 +1153,7 @@ def test_connection():
 # test_shareConvert()
 # test_computeMSB()
 #test_mult()   
+test_multList()
 #test_reconstruct2PC()
 #test_MyType()
 #test_connection()
