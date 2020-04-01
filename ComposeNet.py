@@ -47,8 +47,17 @@ class ComposeNet:
             node.right = self.get(right)
 
         self.layers[node.layer].append(node)
-        
 
+    def getMatrixResults(self):
+        res = []
+        for l in self.layers:
+            for n in l:
+                if(n.x == 1):
+                    res.append(n.matrix)
+                else:
+                    continue
+        return res
+    
     class ComposeNode:
         def __init__(self,x,y):
             self.layer = self.getLayer(x,y)
@@ -56,7 +65,7 @@ class ComposeNet:
             self.y = y
             self.left = None
             self.right = None
-            matrix = None
+            self.matrix = None
 
         def __eq__(self, other):
             return (self.x == other.x and self.y == other.y)

@@ -749,32 +749,77 @@ class Party:
     def bitDecompOpt(self, a=MyType(0)):
         cnet = ComposeNet(L)
         if self.party == "p0":
-            p0 = self.convertToBitString(a)
-            b0 = self.convertToBitString(MyType(0))
+            p0 = self.convertToBitString(a)[::-1] #reverse since 0 is lsb
+            b0 = self.convertToBitString(MyType(0))[::-1]
             g0 = [None]*L
-            for i in range(L):
-                res = ((self.mult(MyType(int(p0[i])),MyType(int(b0[i]))).x)) % 2 
-                g0[i] = res
+            p0list = [int(a) for a in p0]
+            b0list = [int(a) for a in b0]
+            
+            g0 = multList(p0list,b0list)
 
             M0 = [None]*L
-            for i in range(L):
+            for i in range(len(p0)-1):
                 M0[i] = np.array( [ [p0[i],g0[i]] , [0,0] ])
                 cnet.layers[1][i].matrix = M0[i]
 
+            for i in range(2, cnet.numLayers+1):
+                leftlist = []
+                rightlist = []
+                for cnnode in cnet.layer[i]:
+                    leftlist.append(cnnode.left.matrix)
+                    rightlist.append(cnnode.right.matrix)
+                result = self.matMultList(leftlist,rightlist)
+                for cnode, res in zip(cnet.layer[i],result):
+                    cnode.matrix = res
+                
+            M1_J_0 = cnet.getMatrixResults()
+            C_J_0 = [m[0][1] for m in M1_J_0]
+            S_J_0 = [].append(p0[0])
+            for i in range(1,len(p0)):
+                S_J_0.append(p1[i]^C_J_0[i-1])
+            
+            res = ""
+            for k in S_J_0.reverse():
+                res = res+str(k) 
+            
+            return res
 
         if self.party == "p1":
-            p1 = self.convertToBitString(a)
-            b1 = self.convertToBitString(MyType(0))
+            p1 = self.convertToBitString(a)[::-1] #reverse since 0 is lsb
+            b1 = self.convertToBitString(MyType(0))[::-1]
             g1 = [None]*L
-            for i in range(len(p1)):
-                res = ((self.mult(MyType(int(p1[i])),MyType(int(b1[i]))).x)) % 2 
-                g1[i] = res
+            p1list = [int(a) for a in p1]
+            b1list = [int(a) for a in b1]
+            
+            g1 = multList(b0list,p0list)
             
             M1 = [None]*L
-            for i in range(len(p1)):
+            for i in range(len(p1)-1):
                 M1[i] = np.array( [ [p1[i],g1[i]] , [0,1] ])
-                cnet.layers[1].matrix = M1[i]
+                cnet.layers[1][i].matrix = M1[i]
 
+            for i in range(2, cnet.numLayers+1):
+                leftlist = []
+                rightlist = []
+                for cnnode in cnet.layer[i]:
+                    leftlist.append(cnnode.left.matrix)
+                    rightlist.append(cnnode.right.matrix)
+                result = self.matMultList(leftlist,rightlist)
+                for cnode, res in zip(cnet.layer[i],result):
+                    cnode.matrix = res
+
+            M1_J_1 = cnet.getMatrixResults()
+            C_J_1 = [m[0][1] for m in M1_J_1]
+            S_J_1 = [].append(p1[0])
+            for i in range(1,len(p1)):
+                S_J_1.append(p1[i]^C_J_1[i-1])
+            
+            res = ""
+            for k in S_J_1.reverse():
+                res = res+str(k) 
+            
+            return res
+            
 
         if self.party == "p2":
             for i in range(2*L):
@@ -1023,7 +1068,7 @@ def test_connection():
     p2.sendInt("p0",1300)
     print(p0.recvInt("p2"))
 
-test_matMultList() 
+#test_matMultList() 
 #test_matMult()
 #test_bitDecomp()
 # test_shareConvert()
