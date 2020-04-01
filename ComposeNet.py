@@ -72,4 +72,3 @@ class ComposeNet:
                     return i+1
                 
     
-c = ComposeNet(64)

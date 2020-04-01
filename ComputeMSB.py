@@ -409,9 +409,10 @@ class Party:
         if self.party == "p0":
             A = [None]*length; B = [None]*length; C = [None]*length; 
             for i in range(length):
-                a,b,c = self.triplets[0]
-                A.append(a); B.append(b); C.append(c)
-                self.triplets.pop(0)
+                a,b,c = self.triplets.pop(0)
+                A[i] = a; B[i] = b; C[i] = c
+             
+        
             E_0_list = [matmod(x - a).tolist() for x,a in zip(X,A)]
             F_0_list = [matmod(y - b).tolist() for y,b in zip(Y,B)]
             toSend = [E_0_list, F_0_list]
@@ -432,9 +433,8 @@ class Party:
         if self.party == "p1":
             A = [None]*length; B = [None]*length; C = [None]*length; 
             for i in range(length):
-                a,b,c = self.triplets[0]
-                A.append(a); B.append(b); C.append(c)
-                self.triplets.pop(0)
+                a,b,c = self.triplets.pop(0)
+                A[i] = a; B[i] = b; C[i] = c
 
             E_1_list = [matmod(x - a).tolist() for x,a in zip(X,A)]
             F_1_list = [matmod(y - b).tolist() for y,b in zip(Y,B)]
@@ -955,13 +955,10 @@ def test_matMult():
     print("Result XY:", [matmod(s0+s1) for s0, s1 in zip(p0.matMultResults, p1.matMultResults)])
    
 def test_matMultList():
-    generateMatBeaverTriplets(2)
+    generateMatBeaverTriplets(5)
     X = np.array([[1,2], [3,4]])
     Y = np.array([[4,3], [2,1]])
-    # X_0 = np.array([[0,0], [0,0]])
-    # Y_0 = np.array([[0,0], [0,0]])
-    # X_1 = X
-    # Y_1 = Y
+    
     X_0, X_1 = generateMatrixShares(X)
     Y_0, Y_1 = generateMatrixShares(Y)
 
@@ -969,8 +966,8 @@ def test_matMultList():
     X_1 = [X_1]
     Y_0 = [Y_0]
     Y_1 = [Y_1]
-    p0.shares = [X_0, Y_0]
-    p1.shares = [X_1, Y_1]
+    p0.shares = [X_0, Y_0,X_0,Y_0]
+    p1.shares = [X_1, Y_1,X_1,Y_1]
 
     
     for c in range(len(p0.shares)-1):
@@ -987,7 +984,7 @@ def test_matMultList():
     print("MATMULT Test")
     print("MATRIX X:", X)
     print("Matrix Y:", Y)
-    print("Result XY:", [matmod(s0+s1) for s0, s1 in zip(p0.matMultListResults[0], p1.matMultListResults[0])])
+    print("Result XY:", [matmod(s0+s1) for s0, s1 in zip(p0.matMultListResults[2], p1.matMultListResults[2])])
    
 
         
@@ -998,7 +995,7 @@ def test_matMultList():
 
 
 
-#def test_connection():
+def test_connection():
     p0.sendInt("p2",100)
     print(p2.recvInt("p2"))
     p0.sendInt("p2",1000)
@@ -1025,8 +1022,8 @@ def test_matMultList():
     print(p0.recvInt("p2"))
     p2.sendInt("p0",1300)
     print(p0.recvInt("p2"))
-test_matMultList()
-    
+
+test_matMultList() 
 #test_matMult()
 #test_bitDecomp()
 # test_shareConvert()
