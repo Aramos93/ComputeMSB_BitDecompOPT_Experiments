@@ -386,38 +386,6 @@ class Party:
     # Mimic private compare - actually just compares reconstructed value
     def dummyPC(self, x, r, beta):   
         return beta.x ^ (x.x > r.x)
-
-    def Mult2(self,x,y):
-        if self.party == "p0":
-            a,b,c = self.triplets.pop(0)
-            e_0 = (x - a) % 2**L
-            f_0 = (y - b) % 2**L
-            toSend = [e_0, f_0]
-            self.sendShares("p1", toSend)
-            e_1, f_1 = literal_eval(self.recvShares("p0"))
-            e_1 = int(e_1); f_1 = int(f_1)
-            e = (e_0 + e_1) % 2**L
-            f = (f_0 + f_1) % 2**L
-
-            res = ((x*f) + (e*y) + c) % 2**L
-            #self.matMultResults.append(res)
-            return res
-            
-            
-        if self.party == "p1":
-            a,b,c = self.triplets.pop(0)
-            e_1 = (x - a) % 2**L
-            f_1 = (y - b) % 2**L
-            toSend = [e_1, f_1]
-            self.sendShares("p0", toSend)
-            e_0, f_0 = literal_eval(self.recvShares("p0"))
-            e_0 = int(e_0); f_0 = int(f_0)
-            e = (e_0 + e_1) % 2**L
-            f = (f_0 + f_1) % 2**L
-
-            res = (-1*(e*f) + (x*f) + (e*y) + c) % 2**L
-            #self.matMultResults.append(res)
-            return res
             
     def matMult(self,X,Y):
         if self.party == "p0":
@@ -554,6 +522,37 @@ class Party:
            # print(f"abc_0: {shares_0}, abc_1: {shares_1}")
             self.sendShares("p0", shares_0); self.sendShares("p1", shares_1)
             #time.sleep(0.1)
+
+    def mult2(self,x,y):
+        if self.party == "p0":
+            a,b,c = self.triplets.pop(0)
+            e_0 = (x.x - a) % 2**L
+            f_0 = (y.x - b) % 2**L
+            toSend = [e_0, f_0]
+            self.sendShares("p1", toSend)
+            e_1, f_1 = literal_eval(self.recvShares("p0"))     
+            e_1 = int(e_1); f_1 = int(f_1)
+            e = (e_0 + e_1) % 2**L
+            f = (f_0 + f_1) % 2**L
+
+            res = MyType((x.x*f) + (e*y.x) + c) 
+            self.multResults.append(res)
+            return res
+                    
+        if self.party == "p1":
+            a,b,c = self.triplets.pop(0)
+            e_1 = (x.x - a) % 2**L
+            f_1 = (y.x - b) % 2**L
+            toSend = [e_1, f_1]   
+            e_0, f_0 = literal_eval(self.recvShares("p1"))
+            self.sendShares("p0", toSend)
+            e_0 = int(e_0); f_0 = int(f_0)
+            e = (e_0 + e_1) % 2**L
+            f = (f_0 + f_1) % 2**L
+
+            res = MyType(-1*(e*f) + (x.x*f) + (e*y.x) + c)
+            self.multResults.append(res)
+            return res
 
     def multList(self, X, Y):
         length = len(X)
@@ -782,8 +781,10 @@ class Party:
 
     def bitDecomp(self, a=MyType(0)):
         if self.party == "p0":
-            a0 = self.convertToBitString(a)
+            a0 = self.convertToBitString(a)[::-1]
+            a0 = [int(s) for s in a0]
             b0 = self.convertToBitString(MyType(0))
+            b0 = [int(s) for s in b0]
             #print("a0",a0)
 
             c = [None]*L
@@ -791,49 +792,62 @@ class Party:
             d = [None]*L
             e = [None]*L
             
-            c[-1] = self.mult(MyType(int(a0[-1])),MyType(int(b0[-1]))).x % 2
-            x[-1] = int(a0[-1]) #not doing addition since other share is 0
+            c[0] = self.mult2(MyType(a0[0]),MyType(b0[0])).x % 2
+            
+            x[0] = a0[0] #not doing addition since other share is 0
 
-            for i in range(L-2,-1,-1):
-                d[i] = ((self.mult(MyType(int(a0[i])),MyType(int(b0[i]))).x)) % 2
+            for i in range(1,L):
+                d[i] = (self.mult2(MyType(a0[i]),MyType(b0[i])).x) % 2
+                
                 #print("p0:d:",i,"d[i]",d[i])
 
-                e[i] = ((int(a0[i]) * c[i+1])) % 2
-                c[i] = (self.mult(MyType(e[i]), MyType(d[i]))).x % 2
-                x[i] = (int(a0[i]) + c[i+1]) % 2
+                #e[i] = (self.mult2(MyType(a0[i]), MyType(c[i-1])).x +1)% 2
+                e[i] = (a0[i] * c[i-1]) % 2
+             
+                c[i] = (self.mult2(MyType(e[i]), MyType(d[i])).x) % 2
+                
+                x[i] = (a0[i] + c[i-1]) % 2
             # print("d:",d)
             # print("e:",e)
             # print("c:",c)
             # print("x",x)
             # print("")
-            self.msbResults.append(x[0])
+            self.msbResults.append(x[-1])
         if self.party == "p1":
-            a1 = self.convertToBitString(MyType(0))
+            a1 = self.convertToBitString(MyType(0))[::-1]
+            a1 = [int(s) for s in a1]
             b1 = self.convertToBitString(a)
+            b1 = [int(s) for s in b1]
             #print("b1",b1)
             c = [None]*L
             x = [None]*L
             d = [None]*L
             e = [None]*L
             
-            c[-1] = self.mult(MyType(int(a1[-1])),MyType(int(b1[-1]))).x % 2
-            x[-1] = int(b1[-1])
+            c[0] = self.mult2(MyType(a1[0]),MyType(b1[0])).x % 2
+           
+            x[0] = b1[0]
 
-            for i in range(L-2,-1,-1):
-                d[i] = ((self.mult(MyType(int(a1[i])),MyType(int(b1[i]))).x) +1) % 2 
+            for i in range(1,L):
+                d[i] = (self.mult2(MyType(a1[i]),MyType(b1[i])).x +1) % 2 
+               
                 #print("p1:d:",i,"d[i]",d[i])
-                e[i] = ((int(b1[i]) * c[i+1]) +1) % 2
-                c[i] = (self.mult(MyType(e[i]), MyType(d[i])).x +1) % 2
-                x[i] = (int(b1[i]) + c[i+1]) % 2
+                #e[i] = (self.mult2(MyType(b1[i]), MyType(c[i-1])).x +1) % 2
+                e[i] = (b1[i] * c[i-1] +1) % 2
+              
+                c[i] = (self.mult2(MyType(e[i]), MyType(d[i])).x +1) % 2
+             
+                x[i] = (b1[i] + c[i-1]) % 2
             #time.sleep(0.8)
             # print("d:",d)
             # print("e:",e)
             # print("c:",c)
             # print("x",x)
-            self.msbResults.append(x[0])
-        if self.party == "p2":
-            for i in range(2*L):
-                self.mult()
+            self.msbResults.append(x[-1])
+        # if self.party == "p2":
+        #     for i in range(3*L-2):
+        #         self.mult()
+
 
     def bitDecompOpt(self, a=MyType(0)):
         cnet = ComposeNet(L)
@@ -951,14 +965,13 @@ def test_MyType():
     print(testListRes)
 
 def test_bitDecomp():
-
-    #p0.shares = [MyType(10)]
-    #p1.shares = [MyType(5)]
+    generateBeaverTriplets(30)
+    p0.shares = [MyType(10)]
+    p1.shares = [MyType(5)]
     for c in range(len(p0.shares)):
 
         thread = threading.Thread(target=p2.bitDecomp, args=())
         thread.start()
-
         threads = [None]*len(parties)
         for i, p in enumerate(parties):
             threads[i] = threading.Thread(target=p.bitDecomp, args=(p.shares[c],))
@@ -967,6 +980,7 @@ def test_bitDecomp():
         for p,t in zip(parties, threads):
             t.join(2)
         thread.join(2)
+        
     time.sleep(0.2)
     print("##########################################################")
     print("BITDECOMP TEST")
@@ -1103,6 +1117,32 @@ def test_mult():
     print("##########################################################")
     print("")
 
+def test_mult2():
+    generateBeaverTriplets(20)
+    p0.shares = [MyType(2), MyType(4), MyType(2), MyType(3), MyType(8), MyType(4), MyType(9), MyType(0), MyType(10), MyType(1)]
+    p1.shares = [MyType(1), MyType(1), MyType(2), MyType(5), MyType(8), MyType(3), MyType(9), MyType(1), MyType(2), MyType(1)]
+    for c in range(len(p0.shares)-1):
+
+        threads = [None]*len(parties)
+        for i, p in enumerate(parties):
+            threads[i] = threading.Thread(target=p.mult2, args=(p.shares[c], p.shares[c+1]))
+            threads[i].start()
+        
+
+        for t in threads:
+            t.join(2)
+        
+    
+    print("##########################################################")
+    print("MULT TEST")
+    print("Reconstructed inputs (each value c multiplied with c+1)", [MyType(s0.x+s1.x).x for s0, s1 in zip(p0.shares, p1.shares)])
+    print("Results:")
+    print("Share 0 of result: ", [s.x for s in p0.multResults])
+    print("Share 1 of result: ", [s.x for s in p1.multResults])
+    print("Reconstructed results: ", [MyType(s0.x + s1.x).x for s0, s1 in zip(p0.multResults, p1.multResults)])
+    print("##########################################################")
+    print("")
+
 def test_multList():
     generateBeaverTriplets(4)
     X_0_list = [1, 2, 3, 4]
@@ -1228,7 +1268,7 @@ def test_connection():
 
 # test_matMultList() 
 # test_matMult()
-#test_bitDecomp()
+test_bitDecomp()
 # test_shareConvert()
 # test_computeMSB()
 # test_mult()   
@@ -1237,3 +1277,4 @@ def test_connection():
 # test_MyType()
 # test_connection()
 #test_bitDecompOpt()
+#test_mult2()
