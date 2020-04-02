@@ -80,4 +80,3 @@ class ComposeNet:
                     #print(i+1)
                     return i+1
                 
-    
