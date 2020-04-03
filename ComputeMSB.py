@@ -793,18 +793,16 @@ class Party:
             e = [None]*L
             
             c[0] = self.mult2(MyType(a0[0]),MyType(b0[0])).x % 2
-            
             x[0] = a0[0] #not doing addition since other share is 0
-
             for i in range(1,L):
-                d[i] = (self.mult2(MyType(a0[i]),MyType(b0[i])).x) % 2
+                d[i] = (self.mult2(MyType(a0[i]),MyType(b0[i])).x+1 ) % 2
                 
                 #print("p0:d:",i,"d[i]",d[i])
 
-                #e[i] = (self.mult2(MyType(a0[i]), MyType(c[i-1])).x +1)% 2
-                e[i] = (a0[i] * c[i-1]) % 2
+                e[i] = (self.mult2(MyType(a0[i]), MyType(c[i-1])).x+1)% 2
+                #e[i] = (a0[i] * c[i-1]) % 2
              
-                c[i] = (self.mult2(MyType(e[i]), MyType(d[i])).x) % 2
+                c[i] = (self.mult2(MyType(e[i]), MyType(d[i])).x+1 ) % 2
                 
                 x[i] = (a0[i] + c[i-1]) % 2
             # print("d:",d)
@@ -812,11 +810,13 @@ class Party:
             # print("c:",c)
             # print("x",x)
             # print("")
+            
             self.msbResults.append(x[-1])
         if self.party == "p1":
-            a1 = self.convertToBitString(MyType(0))[::-1]
+            
+            a1 = self.convertToBitString(MyType(0))
             a1 = [int(s) for s in a1]
-            b1 = self.convertToBitString(a)
+            b1 = self.convertToBitString(a)[::-1]
             b1 = [int(s) for s in b1]
             #print("b1",b1)
             c = [None]*L
@@ -825,17 +825,15 @@ class Party:
             e = [None]*L
             
             c[0] = self.mult2(MyType(a1[0]),MyType(b1[0])).x % 2
-           
             x[0] = b1[0]
-
             for i in range(1,L):
-                d[i] = (self.mult2(MyType(a1[i]),MyType(b1[i])).x +1) % 2 
+                d[i] = (self.mult2(MyType(a1[i]),MyType(b1[i])).x ) % 2 
                
                 #print("p1:d:",i,"d[i]",d[i])
-                #e[i] = (self.mult2(MyType(b1[i]), MyType(c[i-1])).x +1) % 2
-                e[i] = (b1[i] * c[i-1] +1) % 2
+                e[i] = (self.mult2(MyType(b1[i]), MyType(c[i-1])).x ) % 2
+                #e[i] = (b1[i] * c[i-1] +1) % 2
               
-                c[i] = (self.mult2(MyType(e[i]), MyType(d[i])).x +1) % 2
+                c[i] = (self.mult2(MyType(e[i]), MyType(d[i])).x ) % 2
              
                 x[i] = (b1[i] + c[i-1]) % 2
             #time.sleep(0.8)
@@ -843,6 +841,7 @@ class Party:
             # print("e:",e)
             # print("c:",c)
             # print("x",x)
+            
             self.msbResults.append(x[-1])
         # if self.party == "p2":
         #     for i in range(3*L-2):
@@ -965,9 +964,9 @@ def test_MyType():
     print(testListRes)
 
 def test_bitDecomp():
-    generateBeaverTriplets(30)
-    p0.shares = [MyType(10)]
-    p1.shares = [MyType(5)]
+    generateBeaverTriplets(100)
+    #p0.shares = [MyType(2)]
+    #p1.shares = [MyType(5)]
     for c in range(len(p0.shares)):
 
         thread = threading.Thread(target=p2.bitDecomp, args=())
@@ -998,8 +997,8 @@ def test_bitDecomp():
 def test_bitDecompOpt():
     generateBeaverTriplets(20)
     generateMatBeaverTriplets(30)
-    p0.shares = [MyType(5)]
-    p1.shares = [MyType(14)]
+    p0.shares = [MyType(3)]
+    p1.shares = [MyType(3)]
 
     for c in range(len(p0.shares)):
         threads = [None]*2
@@ -1023,6 +1022,7 @@ def test_bitDecompOpt():
     print("Reconstructed Bit Decomp: ", [(int(s0)+int(s1)) % 2 for s0,s1 in zip(p0.bitDecompOptResults[0],p1.bitDecompOptResults[0])])
     print("#########################################################")
     print("")
+
 def test_reconstruct2PC():
     print("p0 shares: ", p0.getShareVals())
     print("p1 shares: ", p1.getShareVals())
@@ -1268,7 +1268,7 @@ def test_connection():
 
 # test_matMultList() 
 # test_matMult()
-test_bitDecomp()
+# test_bitDecomp()
 # test_shareConvert()
 # test_computeMSB()
 # test_mult()   
@@ -1276,5 +1276,5 @@ test_bitDecomp()
 # test_reconstruct2PC()
 # test_MyType()
 # test_connection()
-#test_bitDecompOpt()
-#test_mult2()
+test_bitDecompOpt()
+# test_mult2()
