@@ -24,6 +24,9 @@ file2 = "shares1.txt"
 modularize = lambda t: t % 2**L 
 matmod = np.vectorize(modularize) 
 
+modularize = lambda t: t % 2 
+matmod2 = np.vectorize(modularize)
+
 def generateMatrixShares(M):
     M_0 = np.random.randint(2**L, size=(2,2))
     M_1 = matmod(M - M_0)
@@ -852,20 +855,20 @@ class Party:
         cnet = ComposeNet(L)
         if self.party == "p0":
             p0 = self.convertToBitString(a)[::-1] #reverse since 0 is lsb
-            
+            print("p0",p0)
             b0 = self.convertToBitString(MyType(0))[::-1]
             g0 = [None]*L
             p0list = [int(a) for a in p0]
             b0list = [int(a) for a in b0]
 
             g0 = self.multList(p0list,b0list)
-            g0 = [a % 2 for a in g0]      
+            g0 = [a % 2 for a in g0]  
 
+            print("g0",g0)
             M0 = [None]*L
             for i in range(L):
                 M0[i] = np.array( [ [p0list[i],g0[i]] , [0,0] ])
-                
-
+            #print("Mj (p0)",M0)
             for i in range(L-1):
                 cnet.layers[1][i].matrix = M0[i]
 
@@ -875,25 +878,27 @@ class Party:
                 for cnnode in cnet.layers[i]:
                     leftlist.append(cnnode.left.matrix)
                     rightlist.append(cnnode.right.matrix)
-                result = self.matMultList(leftlist,rightlist)
-                result = [matmod(c) for c in result]
+                result = self.matMultList(rightlist,leftlist)
+                result = [matmod2(c) for c in result]
                 print(result)
                 for cnode, res in zip(cnet.layers[i],result):
                     cnode.matrix = res
                 
+                
+
             M1_J_0 = cnet.getMatrixResults()
+            
             C_J_0 = [m[0][1] % 2 for m in M1_J_0]
             S_J_0 = [p0list[0]]
-            print(p0list)
-            print(C_J_0)
+            
             for i in range(1,len(p0)):
                 S_J_0.append(p0list[i]^C_J_0[i-1])
-            print("sj0",S_J_0)
-            res = ""
+            
             S_J_0.reverse()
-            for k in S_J_0:
-                res = res+str(k) 
-            self.bitDecompOptResults.append(res)
+            res = S_J_0
+            
+
+            self.bitDecompOptResults.append(res[0])
             return res
 
         if self.party == "p1":
@@ -906,12 +911,14 @@ class Party:
             b1list = [int(a) for a in b1]
 
             g1 = self.multList(b1list,p1list)
+           
             g1 = [a % 2 for a in g1]
+        
             
             M1 = [None]*L
             for i in range(L):
                 M1[i] = np.array( [ [p1list[i],g1[i]] , [0,1] ])
-            
+            #print("Mj (p1)",M1)
             for i in range(L-1):
                 cnet.layers[1][i].matrix = M1[i]
 
@@ -921,22 +928,22 @@ class Party:
                 for cnnode in cnet.layers[i]:
                     leftlist.append(cnnode.left.matrix)
                     rightlist.append(cnnode.right.matrix)
-                result = self.matMultList(leftlist,rightlist)
-                result = [matmod(c) for c in result]
+                result = self.matMultList(rightlist,leftlist)
+                result = [matmod2(c) for c in result]
                 for cnode, res in zip(cnet.layers[i],result):
                     cnode.matrix = res
+                    
 
             M1_J_1 = cnet.getMatrixResults()
+            
             C_J_1 = [m[0][1] % 2 for m in M1_J_1]
             S_J_1 = [p1list[0]]
             for i in range(1,len(p1)):
                 S_J_1.append(p1list[i]^C_J_1[i-1])
-            
-            res = ""
             S_J_1.reverse()
-            for k in S_J_1:
-                res = res+str(k) 
-            self.bitDecompOptResults.append(res)
+            res = S_J_1
+            
+            self.bitDecompOptResults.append(res[0])
             return res
             
 
@@ -995,10 +1002,10 @@ def test_bitDecomp():
     print("")
     
 def test_bitDecompOpt():
-    generateBeaverTriplets(20)
-    generateMatBeaverTriplets(30)
-    p0.shares = [MyType(3)]
-    p1.shares = [MyType(3)]
+    generateBeaverTriplets(1000)
+    generateMatBeaverTriplets(1000)
+    #p0.shares = [MyType(14)]
+    #p1.shares = [MyType(14)]
 
     for c in range(len(p0.shares)):
         threads = [None]*2
@@ -1019,7 +1026,7 @@ def test_bitDecompOpt():
     print("Results:")
     print("alpha0 values (shares_0 of MSB): ", [s for s in p0.bitDecompOptResults])
     print("alpha1 values (shares_1 of MSB): ", [s for s in p1.bitDecompOptResults])
-    print("Reconstructed Bit Decomp: ", [(int(s0)+int(s1)) % 2 for s0,s1 in zip(p0.bitDecompOptResults[0],p1.bitDecompOptResults[0])])
+    print("Reconstructed Bit Decomp: ", [(int(s0)+int(s1)) % 2 for s0,s1 in zip(p0.bitDecompOptResults,p1.bitDecompOptResults)])
     print("#########################################################")
     print("")
 

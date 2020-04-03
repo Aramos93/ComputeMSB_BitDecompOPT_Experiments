@@ -53,9 +53,10 @@ class ComposeNet:
         for l in self.layers:
             for n in l:
                 if(n.x == 1):
+                    
                     res.append(n.matrix)
                 else:
-                    continue
+                    break
         return res
     
     class ComposeNode:
@@ -79,4 +80,3 @@ class ComposeNet:
                 if(2**i > diff):
                     #print(i+1)
                     return i+1
-                
