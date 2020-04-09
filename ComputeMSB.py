@@ -11,7 +11,7 @@ from ComposeNet import ComposeNet
 
 
 ##################################################### Globals ########################################################
-L = 4
+L = 64
 p = 11
 seed = random.randint(0,100)
 file1 = "shares0.txt"
@@ -22,14 +22,18 @@ file2 = "shares1.txt"
 
 ##################################################### Utilities ######################################################
 modularize = lambda t: t % 2**L 
-matmod = np.vectorize(modularize) 
+matmod = np.vectorize(modularize, otypes=[np.uint64]) 
 
 modularize = lambda t: t % 2 
 matmod2 = np.vectorize(modularize)
 
 def generateMatrixShares(M):
-    M_0 = np.random.randint(2**L, size=(2,2))
-    M_1 = matmod(M - M_0)
+    M_0 = np.array([[random.randint(0, (2**L)-1), random.randint(0, (2**L)-1)],[random.randint(0, (2**L)-1), random.randint(0, (2**L)-1)]])
+    print("M:",type(M))
+    print("M0:", type(M_0))
+    M_1 = M - M_0
+    print("M1:",M_1)
+    M_1 = matmod(M_1)
     return M_0, M_1
 
 # Generate shares in either ZL or Zl-1 of a number
@@ -56,11 +60,15 @@ def generateBeaverTriplets(N):
 
 def generateMatBeaverTriplets(N):
     for _ in range(N):
-        A = np.random.randint(2**L, size=(2,2))
-        B = np.random.randint(2**L, size=(2,2))
+        A = np.array([[random.randint(0, (2**L)-1), random.randint(0, (2**L)-1)],[random.randint(0, (2**L)-1), random.randint(0, (2**L)-1)]])
+        B = np.array([[random.randint(0, (2**L)-1), random.randint(0, (2**L)-1)],[random.randint(0, (2**L)-1), random.randint(0, (2**L)-1)]])
+        
+        # A = np.random.randint(2**L, size=(2,2), dtype=np.uint64)
+        # B = np.random.randint(2**L, size=(2,2), dtype=np.uint64)
         # A = np.array([[1,1], [1, 1]])
         # B = np.array([[1,1], [1,1]])
         C = A @ B 
+        print(C)
         C = matmod(C)
 
         # A_0 = np.array([[0,0], [0,0]])
@@ -384,7 +392,8 @@ class Party:
 
         return share0, share1
     
-    
+    #def PrivateCompare(self, x, r, beta):
+
     
     # Mimic private compare - actually just compares reconstructed value
     def dummyPC(self, x, r, beta):   
@@ -600,9 +609,6 @@ class Party:
             self.multListResults.append(res)
             
             return res
-            
-  
-
 
     # Convert a shares of some value a in ZL to shares of the same value in ZL-1
     def shareConvert(self, a=MyType(0)):
@@ -673,9 +679,7 @@ class Party:
             rec = self.reconstruct2PCSingleInt(a)
         random.seed(seed)
         #beta = MyType(random.randint(0,1),is_zl=False)
-        beta = MyType(1,is_zl=False)
-        
-        
+        beta = MyType(1,is_zl=False)       
 
         if self.party == "p0":
             #if rec.x >= ((2**L) - 1):
@@ -753,8 +757,8 @@ class Party:
             return alpha_1
 
         if self.party == "p2":
-            #x = MyType(random.randint(0, (2**L) - 1), is_zl=False)
-            x = MyType(8, is_zl=False)
+            x = MyType(random.randint(0, (2**L) - 1), is_zl=False)
+            #x = MyType(8, is_zl=False)
             x_0, x_1 = generateMyTypeShares(x.x, in_zl=False)
             #x_0, x_1 = MyType(12,is_zl=False), MyType(11,is_zl=False)
             bin_x = self.convertToBitString(x)
@@ -855,7 +859,7 @@ class Party:
         cnet = ComposeNet(L)
         if self.party == "p0":
             p0 = self.convertToBitString(a)[::-1] #reverse since 0 is lsb
-            print("p0",p0)
+            #print("p0",p0)
             b0 = self.convertToBitString(MyType(0))[::-1]
             g0 = [None]*L
             p0list = [int(a) for a in p0]
@@ -864,7 +868,7 @@ class Party:
             g0 = self.multList(p0list,b0list)
             g0 = [a % 2 for a in g0]  
 
-            print("g0",g0)
+            #print("g0",g0)
             M0 = [None]*L
             for i in range(L):
                 M0[i] = np.array( [ [p0list[i],g0[i]] , [0,0] ])
@@ -880,7 +884,7 @@ class Party:
                     rightlist.append(cnnode.right.matrix)
                 result = self.matMultList(rightlist,leftlist)
                 result = [matmod2(c) for c in result]
-                print(result)
+                #print(result)
                 for cnode, res in zip(cnet.layers[i],result):
                     cnode.matrix = res
                 
