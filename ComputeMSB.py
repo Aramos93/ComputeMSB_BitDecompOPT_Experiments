@@ -187,7 +187,7 @@ class Party:
         listenSocket.listen()
         listenSocket, _ = listenSocket.accept()
         while True:
-            data = listenSocket.recv(1024)
+            data = listenSocket.recv(4096)
             self.listenBuffer.append(data)
 
     #Function to actively connect to a listening socket.
@@ -892,10 +892,13 @@ class Party:
 
             M1_J_0 = cnet.getMatrixResults()
             
-            C_J_0 = [m[0][1] % 2 for m in M1_J_0]
+            
+            C_J_0 = [int(m[0][1].item()) % 2 for m in M1_J_0]
             S_J_0 = [p0list[0]]
             
             for i in range(1,len(p0)):
+                print("HEY THIS IS THE TYPE, p0list",type(p0list[i]), "AND VAL:", p0list[i])
+                print("HEY THIS IS THE TYPE, cj",type(C_J_0[i-1]), "AND VAL:", C_J_0[i-1])
                 S_J_0.append(p0list[i]^C_J_0[i-1])
             
             S_J_0.reverse()
@@ -940,7 +943,7 @@ class Party:
 
             M1_J_1 = cnet.getMatrixResults()
             
-            C_J_1 = [m[0][1] % 2 for m in M1_J_1]
+            C_J_1 = [int(m[0][1].item()) % 2 for m in M1_J_1]
             S_J_1 = [p1list[0]]
             for i in range(1,len(p1)):
                 S_J_1.append(p1list[i]^C_J_1[i-1])
@@ -1006,10 +1009,10 @@ def test_bitDecomp():
     print("")
     
 def test_bitDecompOpt():
-    generateBeaverTriplets(1000)
-    generateMatBeaverTriplets(1000)
-    #p0.shares = [MyType(14)]
-    #p1.shares = [MyType(14)]
+    generateBeaverTriplets(500)
+    generateMatBeaverTriplets(500)
+    p0.shares = [MyType(9223372036854775808)]
+    p1.shares = [MyType(14)]
 
     for c in range(len(p0.shares)):
         threads = [None]*2
