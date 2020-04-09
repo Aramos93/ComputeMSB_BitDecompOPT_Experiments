@@ -3,8 +3,8 @@ from ComputeMSB import MyType
 import random as rand
 
 
-L = 4
-N = 10
+L = 32
+N = 100
 secrets = []
 shares_0 = []
 shares_1 = []
@@ -13,7 +13,7 @@ ZL = 2 ** L
 zeroshares = False #if false --> random shares. if true --> 0 shares (share_0 = original secret, share_1 = 0 array)
 
 for i in range(N):
-    secrets.append(rand.randint(0,ZL))
+    secrets.append(rand.randint(0,ZL-1))
 
 
 if zeroshares:
@@ -21,7 +21,7 @@ if zeroshares:
     shares_1 = [0]*N
 else:
     for i,x in enumerate(secrets):
-        r = rand.randint(0,2*ZL)
+        r = rand.randint(0,ZL)
         shares_1.append(MyType(r).x)
         shares_0.append(MyType(secrets[i] - r).x)
 
@@ -41,6 +41,6 @@ writeSharesToFile()
 print(secrets)
 print(shares_0)
 print(shares_1)
-print([sum(x) for x in zip(shares_0, shares_1)])
+#print([sum(x) for x in zip(shares_0, shares_1)])
 
 

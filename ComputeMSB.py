@@ -11,7 +11,7 @@ from ComposeNet import ComposeNet
 
 
 ##################################################### Globals ########################################################
-L = 64
+L = 32
 p = 11
 seed = random.randint(0,100)
 file1 = "shares0.txt"
@@ -25,14 +25,11 @@ modularize = lambda t: t % 2**L
 matmod = np.vectorize(modularize, otypes=[np.uint64]) 
 
 modularize = lambda t: t % 2 
-matmod2 = np.vectorize(modularize)
+matmod2 = np.vectorize(modularize, otypes=[np.uint64])
 
 def generateMatrixShares(M):
-    M_0 = np.array([[random.randint(0, (2**L)-1), random.randint(0, (2**L)-1)],[random.randint(0, (2**L)-1), random.randint(0, (2**L)-1)]])
-    print("M:",type(M))
-    print("M0:", type(M_0))
+    M_0 = np.array([[random.randint(0, (2**L)-1), random.randint(0, (2**L)-1)],[random.randint(0, (2**L)-1), random.randint(0, (2**L)-1)]], dtype=np.uint64)
     M_1 = M - M_0
-    print("M1:",M_1)
     M_1 = matmod(M_1)
     return M_0, M_1
 
@@ -60,15 +57,14 @@ def generateBeaverTriplets(N):
 
 def generateMatBeaverTriplets(N):
     for _ in range(N):
-        A = np.array([[random.randint(0, (2**L)-1), random.randint(0, (2**L)-1)],[random.randint(0, (2**L)-1), random.randint(0, (2**L)-1)]])
-        B = np.array([[random.randint(0, (2**L)-1), random.randint(0, (2**L)-1)],[random.randint(0, (2**L)-1), random.randint(0, (2**L)-1)]])
+        A = np.array([[random.randint(0, (2**L)-1), random.randint(0, (2**L)-1)],[random.randint(0, (2**L)-1), random.randint(0, (2**L)-1)]], dtype=np.uint64)
+        B = np.array([[random.randint(0, (2**L)-1), random.randint(0, (2**L)-1)],[random.randint(0, (2**L)-1), random.randint(0, (2**L)-1)]], dtype=np.uint64)
         
         # A = np.random.randint(2**L, size=(2,2), dtype=np.uint64)
         # B = np.random.randint(2**L, size=(2,2), dtype=np.uint64)
         # A = np.array([[1,1], [1, 1]])
         # B = np.array([[1,1], [1,1]])
         C = A @ B 
-        print(C)
         C = matmod(C)
 
         # A_0 = np.array([[0,0], [0,0]])
@@ -407,7 +403,7 @@ class Party:
             toSend = [E_0.tolist(), F_0.tolist()]
             self.sendShares("p1", toSend)
             E_1, F_1 = literal_eval(self.recvShares("p0"))
-            E_1 = np.array(E_1); F_1 = np.array(F_1)
+            E_1 = np.array(E_1, dtype=np.uint64); F_1 = np.array(F_1, dtype=np.uint64)
             E = matmod(E_0 + E_1)
             F = matmod(F_0 + F_1)
 
@@ -423,7 +419,7 @@ class Party:
             toSend = [E_1.tolist(), F_1.tolist()]
             self.sendShares("p0", toSend)
             E_0, F_0 = literal_eval(self.recvShares("p1"))
-            E_0 = np.array(E_0); F_0 = np.array(F_0)
+            E_0 = np.array(E_0, dtype=np.uint64); F_0 = np.array(F_0, dtype=np.uint64)
             E = matmod(E_0 + E_1)
             F = matmod(F_0 + F_1)
         
@@ -446,8 +442,8 @@ class Party:
             toSend = [E_0_list, F_0_list]
             self.sendShares("p1", toSend)
             E_1, F_1 = literal_eval(self.recvShares("p0"))
-            E_1_list = [np.array(e) for e in E_1]
-            F_1_list = [np.array(f) for f in F_1]
+            E_1_list = [np.array(e, dtype=np.uint64) for e in E_1]
+            F_1_list = [np.array(f, dtype=np.uint64) for f in F_1]
             
             
             E = [matmod(e0 + e1) for e0,e1 in zip(E_0_list,E_1_list)]
@@ -468,8 +464,8 @@ class Party:
             toSend = [E_1_list, F_1_list]
             self.sendShares("p0", toSend)
             E_0, F_0 = literal_eval(self.recvShares("p1"))
-            E_0_list = [np.array(e) for e in E_0]
-            F_0_list = [np.array(f) for f in F_0]
+            E_0_list = [np.array(e, dtype=np.uint64) for e in E_0]
+            F_0_list = [np.array(f, dtype=np.uint64) for f in F_0]
             
             
             E = [matmod(e0 + e1) for e0,e1 in zip(E_0_list,E_1_list)]
@@ -871,7 +867,7 @@ class Party:
             #print("g0",g0)
             M0 = [None]*L
             for i in range(L):
-                M0[i] = np.array( [ [p0list[i],g0[i]] , [0,0] ])
+                M0[i] = np.array( [ [p0list[i],g0[i]] , [0,0] ], dtype=np.uint64)
             #print("Mj (p0)",M0)
             for i in range(L-1):
                 cnet.layers[1][i].matrix = M0[i]
@@ -897,8 +893,6 @@ class Party:
             S_J_0 = [p0list[0]]
             
             for i in range(1,len(p0)):
-                print("HEY THIS IS THE TYPE, p0list",type(p0list[i]), "AND VAL:", p0list[i])
-                print("HEY THIS IS THE TYPE, cj",type(C_J_0[i-1]), "AND VAL:", C_J_0[i-1])
                 S_J_0.append(p0list[i]^C_J_0[i-1])
             
             S_J_0.reverse()
@@ -924,7 +918,7 @@ class Party:
             
             M1 = [None]*L
             for i in range(L):
-                M1[i] = np.array( [ [p1list[i],g1[i]] , [0,1] ])
+                M1[i] = np.array( [ [p1list[i],g1[i]] , [0,1] ] , dtype=np.uint64)
             #print("Mj (p1)",M1)
             for i in range(L-1):
                 cnet.layers[1][i].matrix = M1[i]
@@ -940,9 +934,9 @@ class Party:
                 for cnode, res in zip(cnet.layers[i],result):
                     cnode.matrix = res
                     
+                    
 
             M1_J_1 = cnet.getMatrixResults()
-            
             C_J_1 = [int(m[0][1].item()) % 2 for m in M1_J_1]
             S_J_1 = [p1list[0]]
             for i in range(1,len(p1)):
@@ -995,6 +989,7 @@ def test_bitDecomp():
         thread.join(2)
         
     time.sleep(0.2)
+    
     print("##########################################################")
     print("BITDECOMP TEST")
     print("Share_0 input: ", [s.x for s in p0.shares])
@@ -1009,11 +1004,11 @@ def test_bitDecomp():
     print("")
     
 def test_bitDecompOpt():
-    generateBeaverTriplets(500)
-    generateMatBeaverTriplets(500)
-    p0.shares = [MyType(9223372036854775808)]
-    p1.shares = [MyType(14)]
-
+    generateBeaverTriplets(20000)
+    generateMatBeaverTriplets(20000)
+    #p0.shares = [MyType(9223372036854775808)]
+    #p1.shares = [MyType(9223372036854775809)]
+    start = time.time()
     for c in range(len(p0.shares)):
         threads = [None]*2
         for i, p in enumerate(parties):
@@ -1023,7 +1018,43 @@ def test_bitDecompOpt():
         for p,t in zip(parties, threads):
             t.join(10)
 
+    end = time.time()
+    print("TIME TAKEN",end - start)
+
+    print("##########################################################")
+    print("BITDECOMP TEST FOR TRUTH")
+    real = [int(p0.convertToBitString(MyType(s0.x+s1.x))[0]) for s0,s1 in zip(p0.shares,p1.shares)]
+    calculated = [(int(s0)+int(s1)) % 2 for s0,s1 in zip(p0.bitDecompOptResults,p1.bitDecompOptResults)]
     
+    for i, (r, c) in enumerate(zip(real,calculated)):
+        if r == c:
+            continue
+        else:
+            print("r is ",r)
+            print("c is ",c)
+            print("p0 value:",p0.shares[i].x)
+            print("p1 value:",p1.shares[i].x)
+    print("#########################################################")
+    print("")
+
+def test_bitDecompOpt_time():
+    generateBeaverTriplets(2000)
+    generateMatBeaverTriplets(2000)
+    #p0.shares = [MyType(14105040557866319647)]
+    #p1.shares = [MyType(6223324861258668224)]
+    start = time.time()
+    for c in range(len(p0.shares)):
+        threads = [None]*2
+        for i, p in enumerate(parties):
+            threads[i] = threading.Thread(target=p.bitDecompOpt, args=(p.shares[c],))
+            threads[i].start()
+        
+        for p,t in zip(parties, threads):
+            t.join(10)
+
+    end = time.time()
+    print("TIME TAKEN",end - start)
+
     print("##########################################################")
     print("BITDECOMP TEST")
     print("Share_0 input: ", [s.x for s in p0.shares])
@@ -1036,7 +1067,7 @@ def test_bitDecompOpt():
     print("Reconstructed Bit Decomp: ", [(int(s0)+int(s1)) % 2 for s0,s1 in zip(p0.bitDecompOptResults,p1.bitDecompOptResults)])
     print("#########################################################")
     print("")
-
+    
 def test_reconstruct2PC():
     print("p0 shares: ", p0.getShareVals())
     print("p1 shares: ", p1.getShareVals())
@@ -1159,8 +1190,8 @@ def test_mult2():
 
 def test_multList():
     generateBeaverTriplets(4)
-    X_0_list = [1, 2, 3, 4]
-    Y_0_list = [2, 3, 4, 5]
+    X_0_list = [14105040557866319647, 2, 3, 4]
+    Y_0_list = [6223324861258668224, 3, 4, 5]
     X_1_list = [0, 0, 0, 0]
     Y_1_list = [0, 0, 0, 0]
     p0.shares = [X_0_list, Y_0_list]
@@ -1286,9 +1317,11 @@ def test_connection():
 # test_shareConvert()
 # test_computeMSB()
 # test_mult()   
-# test_multList()
+
+#test_multList()
 # test_reconstruct2PC()
 # test_MyType()
 # test_connection()
 test_bitDecompOpt()
+#test_bitDecompOpt_time()
 # test_mult2()
