@@ -12,7 +12,7 @@ from BigMat import BigMat
 
 ##################################################### Globals ########################################################
 L = 64
-p = 11
+p = 67
 seed = random.randint(0,100)
 file1 = "shares0.txt"
 file2 = "shares1.txt"
@@ -387,20 +387,22 @@ class Party:
 
         return share0, share1
     
-    def privateCompare(self, x=[], r=MyType(0), beta=-1):
+    def privateCompare(self, x=[], r=MyType(0), beta=MyType(-1)):
+        random.seed(seed)
         t = MyType(r.x+1)
         t = self.convertToBitString(t)
         t = [int(e) for e in t]
+        r_original = r
         r = self.convertToBitString(r)
         r = [int(e) for e in r]
-        
         s = [random.randint(1,p) for _ in range(L)]
+        
 
         w = [None]*L
         c = [None]*L
         if self.party == "p0":
             for i in range (L-1, -1, -1):
-                if beta == 0:    
+                if beta.x == 0:  
                     w[i] = (x[i] - 2 * r[i] * x[i]) % p
                     if i == L-1:
                         c[i] = (-x[i]) % p
@@ -409,36 +411,39 @@ class Party:
                         for k in range(i+1, L):
                             sigma_sum = sigma_sum + w[k]
                         c[i] = (-x[i] + sigma_sum) % p
-                elif beta == 1 and r != ((2**L) -1):
+                elif beta.x == 1 and r_original.x != ((2**L) -1):
                     w[i] = (x[i] - 2 * t[i] * x[i]) % p
                     if i == L-1:
                         c[i] = (-x[i]) % p
                     else:
                         sigma_sum = 0
                         for k in range(i+1, L):
-                            sigma_sum = sigma_sum + w[k]
+                            sigma_sum = (sigma_sum + w[k]) % p
                         c[i] = (x[i] + sigma_sum) % p
                 else:
+                    print("THIS ONE RIGHT HERE")
                     if i != 1:
                         c[i] = 1
                     else:
                         c[i] = -1 % p
-            
+            #print("c,p0",c)
+           
             d = [s_x *c_x for s_x, c_x in zip(s,c)]
             self.sendShares("p2", d)
 
         if self.party == "p1":
+            print("xi",x)
             for i in range (L-1, -1, -1):
-                if beta == 0:    
+                if beta.x == 0:    
                     w[i] = (x[i] + r[i] - (2*r[i]*x[i])) % p
                     if i == L-1:
                         c[i] = (r[i] - x[i] + 1) % p
                     else:
                         sigma_sum = 0
                         for k in range(i+1, L):
-                            sigma_sum = sigma_sum + w[k]
+                            sigma_sum = (sigma_sum + w[k]) % p
                         c[i] = (r[i] - x[i] + 1 + sigma_sum) % p
-                elif beta == 1 and r != ((2**L) -1):
+                elif beta.x == 1 and r_original.x != ((2**L) -1):
                     w[i] = (x[i] + t[i] - 2*t[i]*x[i]) % p
                     if i == L-1:
                         c[i] = (t[i] -x[i]) % p
@@ -448,12 +453,15 @@ class Party:
                             sigma_sum = sigma_sum + w[k]
                         c[i] = (t[i] + x[i] + 1 + sigma_sum) % p
                 else:
+                    print("THIS ONE RIGHT HERE")
+                    print(r_original.x)
                     if i != 1:
                         c[i] = 0
                     else:
                         c[i] = -1 % p
-            
+            print("c,p1",c)
             d = [s_x *c_x for s_x, c_x in zip(s,c)]
+        
             self.sendShares("p2", d)
 
         if self.party == "p2":
@@ -1190,7 +1198,7 @@ def test_shareConvert():
 def test_privateCompare():
     x = MyType(5)
     r = MyType(10)
-    beta = MyType(0)
+    beta = MyType(1)
 
     x = p0.convertToBitString(x)
     x_0, x_1 = p0.generateBitShares(x)
