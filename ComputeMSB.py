@@ -8,10 +8,10 @@ import threading
 import time
 import numpy as np
 from ComposeNet import ComposeNet
-
+from BigMat import BigMat
 
 ##################################################### Globals ########################################################
-L = 32
+L = 64
 p = 11
 seed = random.randint(0,100)
 file1 = "shares0.txt"
@@ -28,10 +28,10 @@ modularize = lambda t: t % 2
 matmod2 = np.vectorize(modularize, otypes=[np.uint64])
 
 def generateMatrixShares(M):
-    M_0 = np.array([[random.randint(0, (2**L)-1), random.randint(0, (2**L)-1)],[random.randint(0, (2**L)-1), random.randint(0, (2**L)-1)]], dtype=np.uint64)
-    M_1 = M - M_0
-    M_1 = matmod(M_1)
+    M_0 = BigMat([[random.randint(0, (2**L)-1), random.randint(0, (2**L)-1)],[random.randint(0, (2**L)-1), random.randint(0, (2**L)-1)]])
+    M_1 = (M - M_0) % L
     return M_0, M_1
+
 
 # Generate shares in either ZL or Zl-1 of a number
 def generateMyTypeShares(x, in_zl=True):
@@ -57,15 +57,14 @@ def generateBeaverTriplets(N):
 
 def generateMatBeaverTriplets(N):
     for _ in range(N):
-        A = np.array([[random.randint(0, (2**L)-1), random.randint(0, (2**L)-1)],[random.randint(0, (2**L)-1), random.randint(0, (2**L)-1)]], dtype=np.uint64)
-        B = np.array([[random.randint(0, (2**L)-1), random.randint(0, (2**L)-1)],[random.randint(0, (2**L)-1), random.randint(0, (2**L)-1)]], dtype=np.uint64)
+        A = BigMat([[random.randint(0, (2**L)-1), random.randint(0, (2**L)-1)],[random.randint(0, (2**L)-1), random.randint(0, (2**L)-1)]])
+        B = BigMat([[random.randint(0, (2**L)-1), random.randint(0, (2**L)-1)],[random.randint(0, (2**L)-1), random.randint(0, (2**L)-1)]])
         
         # A = np.random.randint(2**L, size=(2,2), dtype=np.uint64)
         # B = np.random.randint(2**L, size=(2,2), dtype=np.uint64)
         # A = np.array([[1,1], [1, 1]])
         # B = np.array([[1,1], [1,1]])
-        C = A @ B 
-        C = matmod(C)
+        C = (A @ B) % L 
 
         # A_0 = np.array([[0,0], [0,0]])
         # B_0 = np.array([[0,0], [0,0]])
@@ -398,32 +397,32 @@ class Party:
     def matMult(self,X,Y):
         if self.party == "p0":
             A, B, C = self.matTriplets[0]; self.matTriplets.pop(0)
-            E_0 = matmod(X - A)
-            F_0 = matmod(Y - B)
-            toSend = [E_0.tolist(), F_0.tolist()]
+            E_0 = (X - A) % L
+            F_0 = (Y - B) % L
+            toSend = [E_0.matrix, F_0.matrix]
             self.sendShares("p1", toSend)
             E_1, F_1 = literal_eval(self.recvShares("p0"))
-            E_1 = np.array(E_1, dtype=np.uint64); F_1 = np.array(F_1, dtype=np.uint64)
-            E = matmod(E_0 + E_1)
-            F = matmod(F_0 + F_1)
+            E_1 = BigMat(E_1); F_1 = BigMat(F_1)
+            E = (E_0 + E_1) % L
+            F = (F_0 + F_1) % L
 
-            res = matmod((X @ F) + (E @ Y) + C) 
+            res = ((X @ F) + (E @ Y) + C) % L
             self.matMultResults.append(res)
             return res
             
             
         if self.party == "p1":
             A, B, C = self.matTriplets[0]; self.matTriplets.pop(0)
-            E_1 = matmod(X - A)
-            F_1 = matmod(Y - B)
-            toSend = [E_1.tolist(), F_1.tolist()]
+            E_1 = (X - A) % L
+            F_1 = (Y - B) % L
+            toSend = [E_1.matrix, F_1.matrix]
             self.sendShares("p0", toSend)
             E_0, F_0 = literal_eval(self.recvShares("p1"))
-            E_0 = np.array(E_0, dtype=np.uint64); F_0 = np.array(F_0, dtype=np.uint64)
-            E = matmod(E_0 + E_1)
-            F = matmod(F_0 + F_1)
+            E_0 = BigMat(E_0); F_0 = BigMat(F_0)
+            E = (E_0 + E_1) % L
+            F = (F_0 + F_1) % L
         
-            res = matmod(-1*(E @ F) + (X @ F) + (E @ Y) + C)
+            res = (((E @ F)*-1) + (X @ F) + (E @ Y) + C) % L
             self.matMultResults.append(res)
             return res
 
@@ -437,19 +436,19 @@ class Party:
                 A[i] = a; B[i] = b; C[i] = c
              
         
-            E_0_list = [matmod(x - a).tolist() for x,a in zip(X,A)]
-            F_0_list = [matmod(y - b).tolist() for y,b in zip(Y,B)]
+            E_0_list = [((x - a) % L).matrix for x,a in zip(X,A)]
+            F_0_list = [((y - b) % L).matrix for y,b in zip(Y,B)]
             toSend = [E_0_list, F_0_list]
             self.sendShares("p1", toSend)
             E_1, F_1 = literal_eval(self.recvShares("p0"))
-            E_1_list = [np.array(e, dtype=np.uint64) for e in E_1]
-            F_1_list = [np.array(f, dtype=np.uint64) for f in F_1]
-            
-            
-            E = [matmod(e0 + e1) for e0,e1 in zip(E_0_list,E_1_list)]
-            F = [matmod(f0 + f1) for f0,f1 in zip(F_0_list,F_1_list)]
 
-            res = [matmod((x @ f) + (e @ y) + c) for x,f,e,y,c in zip(X,F,E,Y,C)]
+            E_1_list = [BigMat(e) for e in E_1]
+            F_1_list = [BigMat(f) for f in F_1]
+            
+            E = [((BigMat(e0) + e1) % L) for e0,e1 in zip(E_0_list,E_1_list)]
+            F = [((BigMat(f0) + f1) % L) for f0,f1 in zip(F_0_list,F_1_list)]
+
+            res = [(((x @ f) + (e @ y) + c) % L) for x,f,e,y,c in zip(X,F,E,Y,C)]
             self.matMultListResults = res
             return res
             
@@ -459,19 +458,20 @@ class Party:
             for i in range(length):
                 a,b,c = self.matTriplets.pop(0)
                 A[i] = a; B[i] = b; C[i] = c
-            E_1_list = [matmod(x - a).tolist() for x,a in zip(X,A)]
-            F_1_list = [matmod(y - b).tolist() for y,b in zip(Y,B)]
+            E_1_list = [((x - a) % L).matrix for x,a in zip(X,A)]
+            F_1_list = [((y - b) % L).matrix for y,b in zip(Y,B)]
             toSend = [E_1_list, F_1_list]
             self.sendShares("p0", toSend)
             E_0, F_0 = literal_eval(self.recvShares("p1"))
-            E_0_list = [np.array(e, dtype=np.uint64) for e in E_0]
-            F_0_list = [np.array(f, dtype=np.uint64) for f in F_0]
+            
+            E_0_list = [BigMat(e) for e in E_0]
+            F_0_list = [BigMat(f) for f in F_0]
             
             
-            E = [matmod(e0 + e1) for e0,e1 in zip(E_0_list,E_1_list)]
-            F = [matmod(f0 + f1) for f0,f1 in zip(F_0_list,F_1_list)]
+            E = [((e0 + BigMat(e1)) % L) for e0,e1 in zip(E_0_list,E_1_list)]
+            F = [((f0 + BigMat(f1)) % L) for f0,f1 in zip(F_0_list,F_1_list)]
 
-            res = [matmod(-1*(e @ f) + (x @ f) + (e @ y) + c) for x,f,e,y,c in zip(X,F,E,Y,C)]
+            res = [((((e @ f)*-1) + (x @ f) + (e @ y) + c) % 2) for x,f,e,y,c in zip(X,F,E,Y,C)]
             self.matMultListResults = res
             return res
 
@@ -867,7 +867,7 @@ class Party:
             #print("g0",g0)
             M0 = [None]*L
             for i in range(L):
-                M0[i] = np.array( [ [p0list[i],g0[i]] , [0,0] ], dtype=np.uint64)
+                M0[i] = BigMat( [ [p0list[i],g0[i]] , [0,0] ])
             #print("Mj (p0)",M0)
             for i in range(L-1):
                 cnet.layers[1][i].matrix = M0[i]
@@ -879,7 +879,7 @@ class Party:
                     leftlist.append(cnnode.left.matrix)
                     rightlist.append(cnnode.right.matrix)
                 result = self.matMultList(rightlist,leftlist)
-                result = [matmod2(c) for c in result]
+                result = [(c % 2) for c in result]
                 #print(result)
                 for cnode, res in zip(cnet.layers[i],result):
                     cnode.matrix = res
@@ -889,7 +889,7 @@ class Party:
             M1_J_0 = cnet.getMatrixResults()
             
             
-            C_J_0 = [int(m[0][1].item()) % 2 for m in M1_J_0]
+            C_J_0 = [(m.matrix[0][1]) % 2 for m in M1_J_0]
             S_J_0 = [p0list[0]]
             
             for i in range(1,len(p0)):
@@ -918,7 +918,7 @@ class Party:
             
             M1 = [None]*L
             for i in range(L):
-                M1[i] = np.array( [ [p1list[i],g1[i]] , [0,1] ] , dtype=np.uint64)
+                M1[i] = BigMat( [ [p1list[i],g1[i]] , [0,1] ])
             #print("Mj (p1)",M1)
             for i in range(L-1):
                 cnet.layers[1][i].matrix = M1[i]
@@ -930,14 +930,14 @@ class Party:
                     leftlist.append(cnnode.left.matrix)
                     rightlist.append(cnnode.right.matrix)
                 result = self.matMultList(rightlist,leftlist)
-                result = [matmod2(c) for c in result]
+                result = [c % 2 for c in result]
                 for cnode, res in zip(cnet.layers[i],result):
                     cnode.matrix = res
                     
                     
 
             M1_J_1 = cnet.getMatrixResults()
-            C_J_1 = [int(m[0][1].item()) % 2 for m in M1_J_1]
+            C_J_1 = [(m.matrix[0][1]) % 2 for m in M1_J_1]
             S_J_1 = [p1list[0]]
             for i in range(1,len(p1)):
                 S_J_1.append(p1list[i]^C_J_1[i-1])
@@ -1038,10 +1038,10 @@ def test_bitDecompOpt():
     print("")
 
 def test_bitDecompOpt_time():
-    generateBeaverTriplets(2000)
-    generateMatBeaverTriplets(2000)
-    #p0.shares = [MyType(14105040557866319647)]
-    #p1.shares = [MyType(6223324861258668224)]
+    generateBeaverTriplets(300)
+    generateMatBeaverTriplets(300)
+    p0.shares = [MyType(799616587)]
+    p1.shares = [MyType(1156032192)]
     start = time.time()
     for c in range(len(p0.shares)):
         threads = [None]*2

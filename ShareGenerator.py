@@ -3,7 +3,7 @@ from ComputeMSB import MyType
 import random as rand
 
 
-L = 32
+L = 64
 N = 100
 secrets = []
 shares_0 = []
