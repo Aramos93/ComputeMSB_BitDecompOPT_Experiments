@@ -11,8 +11,8 @@ from ComposeNet import ComposeNet
 from BigMat import BigMat
 
 ##################################################### Globals ########################################################
-L = 64
-p = 67
+L = 4
+p = 11
 seed = random.randint(0,100)
 file1 = "shares0.txt"
 file2 = "shares1.txt"
@@ -169,6 +169,7 @@ class Party:
         self.matTriplets = []
         self.triplets = []
         self.bitDecompOptResults = []
+        self.pcResult = None
         if partyName == 0:
             self.readFile(file1)
         elif partyName == 1:
@@ -377,6 +378,7 @@ class Party:
     
     # Generate shares of each bit of a number x
     def generateBitShares(self, x):
+        random.seed(123)
         share0 = []
         share1 = []
         for i in range(L):
@@ -388,21 +390,26 @@ class Party:
         return share0, share1
     
     def privateCompare(self, x=[], r=MyType(0), beta=MyType(-1)):
-        random.seed(seed)
-        t = MyType(r.x+1)
-        t = self.convertToBitString(t)
-        t = [int(e) for e in t]
-        r_original = r
-        r = self.convertToBitString(r)
-        r = [int(e) for e in r]
-        s = [random.randint(1,p) for _ in range(L)]
+        if self.party != "p2":
+            random.seed(123)
+            x = x[::-1]
+            t = MyType(r.x+1)
+            t = self.convertToBitString(t)
+            t = [int(e) for e in t][::-1]
+            r_original = r
+            r = self.convertToBitString(r)
+            r = [int(e) for e in r][::-1]
+            s = [random.randint(1,p) for _ in range(L)]
         
 
         w = [None]*L
         c = [None]*L
         if self.party == "p0":
+            # print("p0 x",x)
+            # print("p0 r",r)
+            # print("p0 t",t)
             for i in range (L-1, -1, -1):
-                if beta.x == 0:  
+                if beta.x == 0:                     
                     w[i] = (x[i] - 2 * r[i] * x[i]) % p
                     if i == L-1:
                         c[i] = (-x[i]) % p
@@ -414,25 +421,28 @@ class Party:
                 elif beta.x == 1 and r_original.x != ((2**L) -1):
                     w[i] = (x[i] - 2 * t[i] * x[i]) % p
                     if i == L-1:
-                        c[i] = (-x[i]) % p
+                        c[i] = (x[i]) % p
                     else:
                         sigma_sum = 0
                         for k in range(i+1, L):
                             sigma_sum = (sigma_sum + w[k]) % p
                         c[i] = (x[i] + sigma_sum) % p
                 else:
-                    print("THIS ONE RIGHT HERE")
+                    #print("THIS ONE RIGHT HERE")
                     if i != 1:
                         c[i] = 1
                     else:
                         c[i] = -1 % p
             #print("c,p0",c)
-           
+            #print("p0 w:",w)
+            #print("p0 c:",c)
             d = [s_x *c_x for s_x, c_x in zip(s,c)]
             self.sendShares("p2", d)
 
         if self.party == "p1":
-            print("xi",x)
+            # print("p1 x",x)
+            # print("p1 r",r)
+            # print("p1 t",t)
             for i in range (L-1, -1, -1):
                 if beta.x == 0:    
                     w[i] = (x[i] + r[i] - (2*r[i]*x[i])) % p
@@ -446,20 +456,22 @@ class Party:
                 elif beta.x == 1 and r_original.x != ((2**L) -1):
                     w[i] = (x[i] + t[i] - 2*t[i]*x[i]) % p
                     if i == L-1:
-                        c[i] = (t[i] -x[i]) % p
+                        c[i] = (-t[i] + x[i] + 1) % p
                     else:
                         sigma_sum = 0
                         for k in range(i+1, L):
                             sigma_sum = sigma_sum + w[k]
-                        c[i] = (t[i] + x[i] + 1 + sigma_sum) % p
+                        c[i] = (-t[i] + x[i] + 1 + sigma_sum) % p
                 else:
-                    print("THIS ONE RIGHT HERE")
-                    print(r_original.x)
+                    # print("THIS ONE RIGHT HERE")
+                    # print(r_original.x)
                     if i != 1:
                         c[i] = 0
                     else:
                         c[i] = -1 % p
-            print("c,p1",c)
+            #print("p1 w:",w)
+            #print("p1 c:",c)
+            #print("c,p1",c)
             d = [s_x *c_x for s_x, c_x in zip(s,c)]
         
             self.sendShares("p2", d)
@@ -468,12 +480,12 @@ class Party:
             d_0 = literal_eval(self.recvShares("p2"))
             d_1 = literal_eval(self.recvShares("p2"))
             d = [(x+y) % p for x,y in zip(d_0, d_1)]
-            print(d)
+            #print(d)
             if 0 in d:
-                print(1)
+                self.pcResult = 1
                 return 1
             else:
-                print(0)
+                self.pcResult = 0
                 return 0
 
 
@@ -863,7 +875,7 @@ class Party:
             #time.sleep(0.1)
             self.sendInt("p0", x_firstBit_0.x); self.sendInt("p1", x_firstBit_1.x)
             #time.sleep(0.1)
-            r = MyType(self.recvInt("p2"), is_zl=False)
+            #r = MyType(self.recvInt("p2"), is_zl=False)
             #print("p2 r: ", r.x)
             beta_prime = self.privateCompare()
             #print("beta': ",beta_prime)
@@ -1196,12 +1208,12 @@ def test_shareConvert():
     print("")
 
 def test_privateCompare():
-    x = MyType(5)
-    r = MyType(10)
-    beta = MyType(1)
+    x = MyType(1)
+    r = MyType(12)
+    beta = MyType(0)
 
-    x = p0.convertToBitString(x)
-    x_0, x_1 = p0.generateBitShares(x)
+    x_bin = p0.convertToBitString(x)
+    x_0, x_1 = p0.generateBitShares(x_bin)
 
    
     thread1 = threading.Thread(target=p0.privateCompare, kwargs={'x':x_0, 'r':r, 'beta':beta}); thread1.start()
@@ -1209,6 +1221,14 @@ def test_privateCompare():
     thread3 = threading.Thread(target=p2.privateCompare, args=()); thread3.start()
 
     thread1.join(2); thread2.join(2); thread3.join(2)
+
+    print("##########################################################")
+    print("PRIVATE COMPARE TEST")
+    print(f"Comparing {x.x} > {r.x} with beta = {beta.x}")
+    print(f"{beta.x} XOR ({x.x} > {r.x})")
+    print("Result:",p2.pcResult)
+    print("##########################################################")
+    print()
 
 
 def test_computeMSB():
@@ -1421,7 +1441,7 @@ def test_connection():
 # test_matMult()
 # test_bitDecomp()
 # test_shareConvert()
-# test_computeMSB()
+#test_computeMSB()
 # test_mult()   
 test_privateCompare()
 #test_multList()
