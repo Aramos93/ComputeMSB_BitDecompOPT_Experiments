@@ -11,8 +11,8 @@ from ComposeNet import ComposeNet
 from BigMat import BigMat
 
 ##################################################### Globals ########################################################
-L = 4
-p = 11
+L = 64
+p = 67
 seed = random.randint(0,100)
 file1 = "shares0.txt"
 file2 = "shares1.txt"
@@ -325,8 +325,7 @@ class Party:
             elif(sendTo == "p1"):
                 self.socket21send.send(value)
 
-    
-    
+
     ############ Send and Receive single int ####################
     def sendInt(self,target,value):
         intBytes = bytes(str(value), 'utf8')
@@ -343,8 +342,7 @@ class Party:
                 data = self.listenBuffer.pop(0)
                 strings = str(data, 'utf8')
                 return(int(strings))
-        
-    
+           
     # Reconstruct secret by sending shares from p1 to p0 and adding them and printing them
     def reconstruct2PC(self):
         if self.party == "p1":
@@ -389,6 +387,7 @@ class Party:
 
         return share0, share1
     
+
     def privateCompare(self, x=[], r=MyType(0), beta=MyType(-1)):
         if self.party != "p2":
             random.seed(123)
@@ -488,12 +487,11 @@ class Party:
                 self.pcResult = 0
                 return 0
 
-
-
     # Mimic private compare - actually just compares reconstructed value
     def dummyPC(self, x, r, beta):   
         return beta.x ^ (x.x > r.x)
-            
+
+
     def matMult(self,X,Y):
         if self.party == "p0":
             A, B, C = self.matTriplets[0]; self.matTriplets.pop(0)
@@ -575,6 +573,7 @@ class Party:
             self.matMultListResults = res
             return res
 
+
     def mult(self, x=MyType(0), y=MyType(0)):
         if self.party == "p0":
             shares_0 = literal_eval(self.recvShares("p0",3))
@@ -631,6 +630,7 @@ class Party:
             self.sendShares("p0", shares_0); self.sendShares("p1", shares_1)
             #time.sleep(0.1)
 
+
     def mult2(self,x,y):
         if self.party == "p0":
             a,b,c = self.triplets.pop(0)
@@ -661,6 +661,7 @@ class Party:
             res = MyType(-1*(e*f) + (x.x*f) + (e*y.x) + c)
             self.multResults.append(res)
             return res
+
 
     def multList(self, X, Y):
         length = len(X)
@@ -837,8 +838,8 @@ class Party:
             # print("p1 r_0: ", r_0.x)
             # print("p1 r: ", r.x)
 
-            self.sendInt("p2", r.x) #Doesn't actually happen in protocol, but p2 needs to dummy PC
-            time.sleep(0.1)
+            #self.sendInt("p2", r.x) #Doesn't actually happen in protocol, but p2 needs to dummy PC
+        
 
             beta_prime_1 = MyType(self.recvInt("p1"))
             #beta_prime_1 = MyType(14)
@@ -1208,9 +1209,9 @@ def test_shareConvert():
     print("")
 
 def test_privateCompare():
-    x = MyType(1)
-    r = MyType(12)
-    beta = MyType(0)
+    x = MyType(5)
+    r = MyType(2)
+    beta = MyType(1)
 
     x_bin = p0.convertToBitString(x)
     x_0, x_1 = p0.generateBitShares(x_bin)
@@ -1230,17 +1231,17 @@ def test_privateCompare():
     print("##########################################################")
     print()
 
-
 def test_computeMSB():
     p0.converted_shares = [MyType(10),MyType(1),MyType(3),MyType(7),MyType(10),MyType(2),MyType(3),MyType(7),MyType(5),MyType(11)]
     p1.converted_shares = [MyType(2),MyType(7),MyType(11),MyType(14),MyType(5),MyType(12),MyType(12),MyType(0),MyType(10),MyType(7)]
         
-    for c in range(len(p0.shares)):
+    for c in range(len(p0.converted_shares)):
         threads = [None]*len(parties)
         for i, p in enumerate(parties):
+           
             threads[i] = threading.Thread(target=p.computeMSB, args=(p.converted_shares[c],))
             threads[i].start()
-            time.sleep(0.1)
+           
         
         thread = threading.Thread(target=p2.computeMSB, args=())
         thread.start()
@@ -1259,7 +1260,6 @@ def test_computeMSB():
     print("Reconstructed MSB: ", [MyType(s0.x+s1.x).x for s0,s1 in zip(p0.msbResults,p1.msbResults)])
     print("#########################################################")
     print("")
-
 
 def test_mult():
     p0.shares = [MyType(2), MyType(4), MyType(2), MyType(3), MyType(8), MyType(4), MyType(9), MyType(0), MyType(10), MyType(1)]
@@ -1406,7 +1406,6 @@ def test_matMultList():
     print("Matrix Y:", Y)
     print("Result XY:", [matmod(s0+s1) for s0, s1 in zip(p0.matMultListResults[0], p1.matMultListResults[0])])
    
-
 def test_connection():
     p0.sendInt("p2",100)
     print(p2.recvInt("p2"))
@@ -1441,13 +1440,13 @@ def test_connection():
 # test_matMult()
 # test_bitDecomp()
 # test_shareConvert()
-#test_computeMSB()
+test_computeMSB()
 # test_mult()   
-test_privateCompare()
-#test_multList()
+# test_privateCompare()
+# test_multList()
 # test_reconstruct2PC()
 # test_MyType()
 # test_connection()
-#test_bitDecompOpt()
-#test_bitDecompOpt_time()
+# test_bitDecompOpt()
+# test_bitDecompOpt_time()
 # test_mult2()
