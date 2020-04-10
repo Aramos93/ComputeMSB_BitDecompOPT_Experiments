@@ -387,9 +387,15 @@ class Party:
 
         return share0, share1
     
-    #def PrivateCompare(self, x, r, beta):
+    def privateCompare(self, x, r, beta):
+        t = MyType(r+1)
 
-    
+        if self.party == "p0":
+            for i in range ()
+        if self.party == "p1":
+
+
+
     # Mimic private compare - actually just compares reconstructed value
     def dummyPC(self, x, r, beta):   
         return beta.x ^ (x.x > r.x)
