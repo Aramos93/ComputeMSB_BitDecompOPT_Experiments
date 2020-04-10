@@ -387,12 +387,86 @@ class Party:
 
         return share0, share1
     
-    def privateCompare(self, x, r, beta):
-        t = MyType(r+1)
+    def privateCompare(self, x=[], r=MyType(0), beta=-1):
+        t = MyType(r.x+1)
+        t = self.convertToBitString(t)
+        t = [int(e) for e in t]
+        r = self.convertToBitString(r)
+        r = [int(e) for e in r]
+        
+        s = [random.randint(1,p) for _ in range(L)]
 
+        w = [None]*L
+        c = [None]*L
         if self.party == "p0":
-            for i in range ()
+            for i in range (L-1, -1, -1):
+                if beta == 0:    
+                    w[i] = (x[i] - 2 * r[i] * x[i]) % p
+                    if i == L-1:
+                        c[i] = (-x[i]) % p
+                    else:
+                        sigma_sum = 0
+                        for k in range(i+1, L):
+                            sigma_sum = sigma_sum + w[k]
+                        c[i] = (-x[i] + sigma_sum) % p
+                elif beta == 1 and r != ((2**L) -1):
+                    w[i] = (x[i] - 2 * t[i] * x[i]) % p
+                    if i == L-1:
+                        c[i] = (-x[i]) % p
+                    else:
+                        sigma_sum = 0
+                        for k in range(i+1, L):
+                            sigma_sum = sigma_sum + w[k]
+                        c[i] = (x[i] + sigma_sum) % p
+                else:
+                    if i != 1:
+                        c[i] = 1
+                    else:
+                        c[i] = -1 % p
+            
+            d = [s_x *c_x for s_x, c_x in zip(s,c)]
+            self.sendShares("p2", d)
+
         if self.party == "p1":
+            for i in range (L-1, -1, -1):
+                if beta == 0:    
+                    w[i] = (x[i] + r[i] - (2*r[i]*x[i])) % p
+                    if i == L-1:
+                        c[i] = (r[i] - x[i] + 1) % p
+                    else:
+                        sigma_sum = 0
+                        for k in range(i+1, L):
+                            sigma_sum = sigma_sum + w[k]
+                        c[i] = (r[i] - x[i] + 1 + sigma_sum) % p
+                elif beta == 1 and r != ((2**L) -1):
+                    w[i] = (x[i] + t[i] - 2*t[i]*x[i]) % p
+                    if i == L-1:
+                        c[i] = (t[i] -x[i]) % p
+                    else:
+                        sigma_sum = 0
+                        for k in range(i+1, L):
+                            sigma_sum = sigma_sum + w[k]
+                        c[i] = (t[i] + x[i] + 1 + sigma_sum) % p
+                else:
+                    if i != 1:
+                        c[i] = 0
+                    else:
+                        c[i] = -1 % p
+            
+            d = [s_x *c_x for s_x, c_x in zip(s,c)]
+            self.sendShares("p2", d)
+
+        if self.party == "p2":
+            d_0 = literal_eval(self.recvShares("p2"))
+            d_1 = literal_eval(self.recvShares("p2"))
+            d = [(x+y) % p for x,y in zip(d_0, d_1)]
+            print(d)
+            if 0 in d:
+                print(1)
+                return 1
+            else:
+                print(0)
+                return 0
 
 
 
@@ -687,7 +761,7 @@ class Party:
             #if rec.x >= ((2**L) - 1):
              #   raise Exception(f"Reconstructed value 'a' is {rec.x} which is NOT in ZL-1 {(2**L) -1}")
             x_0 = MyType(self.recvInt("p0"), is_zl=False)   
-            x_bit_arr_0 = self.recvShares("p0")
+            x_bit_arr_0 = literal_eval(self.recvShares("p0"))
             x_firstBit_0 = self.recvInt("p0")
             #x_firstBit_0 = 0
             #print(f"p0 received: x_0 {x_0.x}, x_bit_arr_0 {x_bit_arr_0}, xfirstbit {x_firstBit_0}")
@@ -697,6 +771,8 @@ class Party:
             self.sendInt("p1", r_0.x)
             #time.sleep(0.1)             
             r = MyType(r_0.x + r_1.x, is_zl=False)
+
+            self.privateCompare(x_bit_arr_0, r, beta)
 
             # print("p0 a: ", a.x)
             # print("p0 x_0: ", x_0.x)
@@ -722,7 +798,7 @@ class Party:
 
         if self.party == "p1":      
             x_1 = MyType(self.recvInt("p1"), is_zl=False) 
-            x_bit_arr_1 = self.recvShares("p1")
+            x_bit_arr_1 = literal_eval(self.recvShares("p1"))
             x_firstBit_1 = self.recvInt("p1")
             #x_firstBit_1 = 0
             #print(f"p1 received: x_1 {x_1.x}, x_bit_arr_1 {x_bit_arr_1}, xfirstbit {x_firstBit_1}")
@@ -733,6 +809,7 @@ class Party:
             r_0 = MyType(self.recvInt("p1"), is_zl=False)     
             r = MyType(r_0.x + r_1.x, is_zl=False)
 
+            self.privateCompare(x_bit_arr_1, r, beta)
             # print("p1 a: ", a.x)
             # print("p1 x_1: ", x_1.x)
             # print("p1 y_1: ", y_1.x)
@@ -780,7 +857,7 @@ class Party:
             #time.sleep(0.1)
             r = MyType(self.recvInt("p2"), is_zl=False)
             #print("p2 r: ", r.x)
-            beta_prime = self.dummyPC(x, r, beta)
+            beta_prime = self.privateCompare()
             #print("beta': ",beta_prime)
             beta_prime_0, beta_prime_1 = generateMyTypeShares(beta_prime)
             #print(f"beta'0: {beta_prime_0.x}, beta'1: {beta_prime_1.x}")
@@ -1110,6 +1187,21 @@ def test_shareConvert():
     print("##########################################################")
     print("")
 
+def test_privateCompare():
+    x = MyType(5)
+    r = MyType(10)
+    beta = MyType(0)
+
+    x = p0.convertToBitString(x)
+    x_0, x_1 = p0.generateBitShares(x)
+
+   
+    thread1 = threading.Thread(target=p0.privateCompare, kwargs={'x':x_0, 'r':r, 'beta':beta}); thread1.start()
+    thread2 = threading.Thread(target=p1.privateCompare, kwargs={'x':x_1, 'r':r, 'beta':beta}); thread2.start()
+    thread3 = threading.Thread(target=p2.privateCompare, args=()); thread3.start()
+
+    thread1.join(2); thread2.join(2); thread3.join(2)
+
 
 def test_computeMSB():
     p0.converted_shares = [MyType(10),MyType(1),MyType(3),MyType(7),MyType(10),MyType(2),MyType(3),MyType(7),MyType(5),MyType(11)]
@@ -1323,11 +1415,11 @@ def test_connection():
 # test_shareConvert()
 # test_computeMSB()
 # test_mult()   
-
+test_privateCompare()
 #test_multList()
 # test_reconstruct2PC()
 # test_MyType()
 # test_connection()
-test_bitDecompOpt()
+#test_bitDecompOpt()
 #test_bitDecompOpt_time()
 # test_mult2()
