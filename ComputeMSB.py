@@ -149,7 +149,7 @@ class Party:
             self.socket21recv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.socket21recv.bind((self.address,self.lookup.get('p2_recv_from_p1')))
         
-        self.listenBuffer = []
+        self.listenBuffer = {}
         
         
 
@@ -184,7 +184,8 @@ class Party:
         listenSocket, _ = listenSocket.accept()
         while True:
             data = listenSocket.recv(4096)
-            self.listenBuffer.append(data)
+            data_arr = pickle.loads(data)
+            self.listenBuffer[data_arr[1]] = data_arr[0]
 
     #Function to actively connect to a listening socket.
     def connect(self, sendSocket, targetAddress, target, source):
@@ -283,28 +284,23 @@ class Party:
     
    
     ################ Send and Receive shares ###################
-    def sendShares(self, target, value):
-        pickled = pickle.dumps(value)
+    def sendShares(self, target, value, mark="empty"):
+        pickled = pickle.dumps([value,mark])
         thread = threading.Thread(target=self.send,kwargs=dict(sendTo=target, value=pickled))
         thread.daemon = True
         thread.start()
         #self.send(sendTo,pickled)
 
-    def recvShares(self,recvParty, length=0):
+    def recvShares(self,recvParty,mark = "empty", length=0):
         while True:
             if(len(self.listenBuffer)==0):
                 continue
             else:
-                data = self.listenBuffer.pop(0)
-                data_arr = pickle.loads(data)
-                if(length != 0):
-                    if (len(literal_eval(repr(data_arr))) == length):
-                        return repr(data_arr)
-                    else:
-                        self.listenBuffer.append(data)
-                        continue
-                else:
-                    return repr(data_arr)
+                try:
+                    data = self.listenBuffer.pop(mark)
+                except:
+                    continue
+                return(repr(data))
 
     def send(self, sendTo, value):
         if(self.party == "p0"):
@@ -327,21 +323,23 @@ class Party:
 
 
     ############ Send and Receive single int ####################
-    def sendInt(self,target,value):
-        intBytes = bytes(str(value), 'utf8')
-        thread = threading.Thread(target=self.send,kwargs=dict(sendTo=target, value=intBytes))
+    def sendInt(self,target,value,mark="empty"):
+        pickled = pickle.dumps([value,mark])
+        thread = threading.Thread(target=self.send,kwargs=dict(sendTo=target, value=pickled))
         thread.daemon = True
         thread.start()
         #self.send(sendTo,intBytes)
 
-    def recvInt(self,recvParty):
+    def recvInt(self,recvParty,mark="empty"):
         while True:
             if(len(self.listenBuffer)==0):
                 continue
             else:
-                data = self.listenBuffer.pop(0)
-                strings = str(data, 'utf8')
-                return(int(strings))
+                try:
+                    data = self.listenBuffer.pop(mark)
+                except:
+                    continue
+                return(int(data))
            
     # Reconstruct secret by sending shares from p1 to p0 and adding them and printing them
     def reconstruct2PC(self):
@@ -357,9 +355,9 @@ class Party:
     def reconstruct2PCSingleInt(self, a):
         res =  MyType(0)
         if self.party == "p1":
-            self.sendInt("p0", a.x)
+            self.sendInt("p0", a.x, "a.x")
         if(self.party == "p0"):
-            a_1 = self.recvInt(self.party)
+            a_1 = self.recvInt(self.party,"a.x")
             res = a + MyType(a_1)
         return res        
             
@@ -436,7 +434,7 @@ class Party:
             #print("p0 w:",w)
             #print("p0 c:",c)
             d = [s_x *c_x for s_x, c_x in zip(s,c)]
-            self.sendShares("p2", d)
+            self.sendShares("p2", d, "d_0")
 
         if self.party == "p1":
             # print("p1 x",x)
@@ -473,11 +471,11 @@ class Party:
             #print("c,p1",c)
             d = [s_x *c_x for s_x, c_x in zip(s,c)]
         
-            self.sendShares("p2", d)
+            self.sendShares("p2", d, "d_1")
 
         if self.party == "p2":
-            d_0 = literal_eval(self.recvShares("p2"))
-            d_1 = literal_eval(self.recvShares("p2"))
+            d_0 = literal_eval(self.recvShares("p2","d_0"))
+            d_1 = literal_eval(self.recvShares("p2","d_1"))
             d = [(x+y) % p for x,y in zip(d_0, d_1)]
             #print(d)
             if 0 in d:
@@ -576,14 +574,14 @@ class Party:
 
     def mult(self, x=MyType(0), y=MyType(0)):
         if self.party == "p0":
-            shares_0 = literal_eval(self.recvShares("p0",3))
+            shares_0 = literal_eval(self.recvShares("p0","shares_0"))
             a = shares_0[0]; b = shares_0[1]; c = shares_0[2]
             e_0 = MyType(x.x - a)
             f_0 = MyType(y.x - b)
             e_f_shares_0 = [e_0.x, f_0.x]
-            e_f_shares_1 = literal_eval(self.recvShares("p0",2))
+            e_f_shares_1 = literal_eval(self.recvShares("p0","e_f_shares_1"))
             #print("e_f shares_0: ", e_f_shares_0)
-            self.sendShares("p1", e_f_shares_0)
+            self.sendShares("p1", e_f_shares_0,"e_f_shares_0")
             #time.sleep(0.1) 
             e_1 = e_f_shares_1[0]; f_1 = e_f_shares_1[1]
             e = MyType(e_0.x + e_1); f = MyType(f_0.x + f_1)
@@ -594,16 +592,16 @@ class Party:
             return x_mult_y_0
         
         if self.party == "p1":
-            shares_1 = literal_eval(self.recvShares("p1",3))
+            shares_1 = literal_eval(self.recvShares("p1","shares_1"))
             a = shares_1[0]; b = shares_1[1]; c = shares_1[2]
             e_1 = MyType(x.x - a)
             f_1 = MyType(y.x - b)
             e_f_shares_1 = [e_1.x, f_1.x]
             # print("p1 e_1: ", e_1.x)
             # print("e_f shares_1: ", e_f_shares_1)
-            self.sendShares("p0", e_f_shares_1)
+            self.sendShares("p0", e_f_shares_1,"e_f_shares_1")
             #time.sleep(0.1)
-            e_f_shares_0 = literal_eval(self.recvShares("p1",2))    
+            e_f_shares_0 = literal_eval(self.recvShares("p1","e_f_shares_0"))    
             e_0 = e_f_shares_0[0]; f_0 = e_f_shares_0[1]
             #print("p1 e_0: ",e_0)
             e = MyType(e_0 + e_1.x); f = MyType(f_0 + f_1.x)
@@ -627,7 +625,7 @@ class Party:
             shares_0 = [a_0.x, b_0.x, c_0.x]; shares_1 = [a_1.x, b_1.x, c_1.x]
             # shares_0 = [3,10,2]; shares_1 = [12,1,3]
            # print(f"abc_0: {shares_0}, abc_1: {shares_1}")
-            self.sendShares("p0", shares_0); self.sendShares("p1", shares_1)
+            self.sendShares("p0", shares_0,"shares_0"); self.sendShares("p1", shares_1,"shares_1")
             #time.sleep(0.1)
 
 
@@ -724,10 +722,10 @@ class Party:
                 raise Exception(f"Reconstructed value 'a' is {rec.x} == L-1 {(2**L)-1} which is not allowed according to protocol")
             a_tilde = a + r_0
             beta = self.wrap(a, r_0)
-            self.sendInt("p2", a_tilde.x)
-            x_bit_0 = self.recvShares("p0") # bit shares of x not used because PC not implemented (only dummied)
-            delta_0 = self.recvInt("p0")
-            n_prime_0 = self.recvInt("p0")
+            self.sendInt("p2", a_tilde.x, "a_tilde_0")
+            x_bit_0 = self.recvShares("p0", "x_bit_arr_0") # bit shares of x not used because PC not implemented (only dummied)
+            delta_0 = self.recvInt("p0", "delta_0")
+            n_prime_0 = self.recvInt("p0", "n_prime_0")
             n_0 = MyType(n_prime_0 + (1 - self.partyName)*n_prime_prime.x - 2 * n_prime_prime.x * n_prime_0, is_zl=False)
             theta = MyType(beta + (1 - self.partyName) * (-alpha - 1) + delta_0 + n_0.x, is_zl=False)
             y_0 = MyType(a.x-theta.x, is_zl=False)
@@ -738,10 +736,10 @@ class Party:
         if(self.party == "p1"):
             a_tilde = a + r_1
             beta = self.wrap(a, r_1)
-            self.sendInt("p2", a_tilde.x)
-            x_bit_1 = self.recvShares("p1") # bit shares of x not used because PC not implemented (only dummied)
-            delta_1 = self.recvInt("p1")
-            n_prime_1 = self.recvInt("p1")
+            self.sendInt("p2", a_tilde.x, "a_tilde_1")
+            x_bit_1 = self.recvShares("p1", "x_bit_arr_1") # bit shares of x not used because PC not implemented (only dummied)
+            delta_1 = self.recvInt("p1", "delta_1")
+            n_prime_1 = self.recvInt("p1", "n_prime_1")
             n_1 = MyType(n_prime_1 + (1 - self.partyName) * n_prime_prime.x - 2 * n_prime_prime.x * n_prime_1, is_zl=False)
             theta = MyType(beta + (1 - self.partyName) * (-alpha - 1) + delta_1 + n_1.x, is_zl=False)
             y_1 = MyType(a.x-theta.x, is_zl=False)
@@ -751,24 +749,23 @@ class Party:
             return y_1
             
         if(self.party == "p2"):
-            a_tilde_0 = MyType(self.recvInt("p2"))
-            a_tilde_1 = MyType(self.recvInt("p2"))
+            a_tilde_0 = MyType(self.recvInt("p2","a_tilde_0"))
+            a_tilde_1 = MyType(self.recvInt("p2","a_tilde_1"))
             x = a_tilde_0 + a_tilde_1
             delta = self.wrap(a_tilde_0, a_tilde_1)
  
             x_bit_arr_0, x_bit_arr_1 = self.generateBitShares(self.convertToBitString(x))
             delta_0, delta_1 = generateMyTypeShares(delta, False)
-
-            self.sendShares("p0", x_bit_arr_0); self.sendShares("p1", x_bit_arr_1)
+            self.sendShares("p0", x_bit_arr_0,"x_bit_arr_0"); self.sendShares("p1", x_bit_arr_1, "x_bit_arr_1")
             #time.sleep(0.1)
-            self.sendInt("p0", delta_0.x); self.sendInt("p1", delta_1.x)
+            self.sendInt("p0", delta_0.x, "delta_0"); self.sendInt("p1", delta_1.x, "delta_1")
             #time.sleep(0.1)
 
             n_prime = self.dummyPC(x, r-MyType(1), n_prime_prime)
             n_prime_0, n_prime_1 = generateMyTypeShares(n_prime,False)
            
 
-            self.sendInt("p0", n_prime_0.x); self.sendInt("p1", n_prime_1.x)
+            self.sendInt("p0", n_prime_0.x, "n_prime_0"); self.sendInt("p1", n_prime_1.x, "n_prime_1")
     
 
     def computeMSB(self, a=MyType(0)):
@@ -781,15 +778,15 @@ class Party:
         if self.party == "p0":
             #if rec.x >= ((2**L) - 1):
              #   raise Exception(f"Reconstructed value 'a' is {rec.x} which is NOT in ZL-1 {(2**L) -1}")
-            x_0 = MyType(self.recvInt("p0"), is_zl=False)   
-            x_bit_arr_0 = literal_eval(self.recvShares("p0"))
-            x_firstBit_0 = self.recvInt("p0")
+            x_0 = MyType(self.recvInt("p0","x_0"), is_zl=False)   
+            x_bit_arr_0 = literal_eval(self.recvShares("p0","x_bit_arr_0"))
+            x_firstBit_0 = self.recvInt("p0","x_firstBit_0")
             #x_firstBit_0 = 0
             #print(f"p0 received: x_0 {x_0.x}, x_bit_arr_0 {x_bit_arr_0}, xfirstbit {x_firstBit_0}")
             y_0 = MyType(2*a.x, is_zl=False) 
             r_0 = MyType(y_0.x + x_0.x, is_zl=False)  
-            r_1 = MyType(self.recvInt("p0"), is_zl=False)   
-            self.sendInt("p1", r_0.x)
+            r_1 = MyType(self.recvInt("p0","r_1"), is_zl=False)   
+            self.sendInt("p1", r_0.x,"r_0")
             #time.sleep(0.1)             
             r = MyType(r_0.x + r_1.x, is_zl=False)
 
@@ -802,7 +799,7 @@ class Party:
             # print("p0 r_1: ", r_1.x)
             # print("p0 r: ", r.x)
 
-            beta_prime_0 = MyType(self.recvInt("p0"))
+            beta_prime_0 = MyType(self.recvInt("p0","beta_prime_0"))
             #beta_prime_0 = MyType(2)
             #print("p0 b':",beta_prime_0.x)
             gamma_0 = MyType(beta_prime_0.x + self.partyName * beta.x - 2 * beta.x * beta_prime_0.x)
@@ -818,16 +815,16 @@ class Party:
             return alpha_0
 
         if self.party == "p1":      
-            x_1 = MyType(self.recvInt("p1"), is_zl=False) 
-            x_bit_arr_1 = literal_eval(self.recvShares("p1"))
-            x_firstBit_1 = self.recvInt("p1")
+            x_1 = MyType(self.recvInt("p1","x_1"), is_zl=False) 
+            x_bit_arr_1 = literal_eval(self.recvShares("p1","x_bit_arr_1"))
+            x_firstBit_1 = self.recvInt("p1","x_firstBit_1")
             #x_firstBit_1 = 0
             #print(f"p1 received: x_1 {x_1.x}, x_bit_arr_1 {x_bit_arr_1}, xfirstbit {x_firstBit_1}")
             y_1 = MyType(2*a.x, is_zl=False)    
             r_1 = MyType(y_1.x + x_1.x, is_zl=False)    
-            self.sendInt("p0", r_1.x)
+            self.sendInt("p0", r_1.x,"r_1")
             #time.sleep(0.1)
-            r_0 = MyType(self.recvInt("p1"), is_zl=False)     
+            r_0 = MyType(self.recvInt("p1","r_0"), is_zl=False)     
             r = MyType(r_0.x + r_1.x, is_zl=False)
 
             self.privateCompare(x_bit_arr_1, r, beta)
@@ -841,7 +838,7 @@ class Party:
             #self.sendInt("p2", r.x) #Doesn't actually happen in protocol, but p2 needs to dummy PC
         
 
-            beta_prime_1 = MyType(self.recvInt("p1"))
+            beta_prime_1 = MyType(self.recvInt("p1","beta_prime_1"))
             #beta_prime_1 = MyType(14)
             #print("p1 b':",beta_prime_1.x)
             gamma_1 = MyType(beta_prime_1.x + self.partyName * beta.x - 2 * beta.x * beta_prime_1.x)
@@ -870,11 +867,11 @@ class Party:
             # print(f"x_bit_arr_0: {x_bit_arr_0}, x_bit_arr_1: {x_bit_arr_1}")
             # print(f"x_first_0: {x_firstBit_0.x}, x_first_1: {x_firstBit_1.x}")
           
-            self.sendInt("p0", x_0.x); self.sendInt("p1", x_1.x)
+            self.sendInt("p0", x_0.x,"x_0"); self.sendInt("p1", x_1.x,"x_1")
             #time.sleep(0.1)
-            self.sendShares("p0", x_bit_arr_0); self.sendShares("p1", x_bit_arr_1)
+            self.sendShares("p0", x_bit_arr_0,"x_bit_arr_0"); self.sendShares("p1", x_bit_arr_1, "x_bit_arr_1")
             #time.sleep(0.1)
-            self.sendInt("p0", x_firstBit_0.x); self.sendInt("p1", x_firstBit_1.x)
+            self.sendInt("p0", x_firstBit_0.x,"x_firstBit_0"); self.sendInt("p1", x_firstBit_1.x,"x_firstBit_1")
             #time.sleep(0.1)
             #r = MyType(self.recvInt("p2"), is_zl=False)
             #print("p2 r: ", r.x)
@@ -882,7 +879,7 @@ class Party:
             #print("beta': ",beta_prime)
             beta_prime_0, beta_prime_1 = generateMyTypeShares(beta_prime)
             #print(f"beta'0: {beta_prime_0.x}, beta'1: {beta_prime_1.x}")
-            self.sendInt("p0", beta_prime_0.x); self.sendInt("p1", beta_prime_1.x)
+            self.sendInt("p0", beta_prime_0.x,"beta_prime_0"); self.sendInt("p1", beta_prime_1.x,"beta_prime_1")
             self.mult()
 
 
@@ -1440,13 +1437,13 @@ def test_connection():
 # test_matMult()
 # test_bitDecomp()
 # test_shareConvert()
-test_computeMSB()
+# test_computeMSB()
 # test_mult()   
 # test_privateCompare()
 # test_multList()
 # test_reconstruct2PC()
 # test_MyType()
 # test_connection()
-# test_bitDecompOpt()
+test_bitDecompOpt()
 # test_bitDecompOpt_time()
 # test_mult2()
