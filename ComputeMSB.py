@@ -397,7 +397,7 @@ class Party:
             r_original = r
             r = self.convertToBitString(r)
             r = [int(e) for e in r][::-1]
-            s = [random.randint(1,p) for _ in range(L)]
+            s = [random.randint(1,p-1) for _ in range(L)]
         
 
         w = [None]*L
@@ -434,7 +434,7 @@ class Party:
             #print("c,p0",c)
             #print("p0 w:",w)
             #print("p0 c:",c)
-            d = [s_x *c_x for s_x, c_x in zip(s,c)]
+            d = [(s_x *c_x) % p for s_x, c_x in zip(s,c)]
             self.sendShares("p2", d, "d_0")
 
         if self.party == "p1":
@@ -470,14 +470,17 @@ class Party:
             #print("p1 w:",w)
             #print("p1 c:",c)
             #print("c,p1",c)
-            d = [s_x *c_x for s_x, c_x in zip(s,c)]
+            d = [(s_x * c_x) % p for s_x, c_x in zip(s,c)]
         
             self.sendShares("p2", d, "d_1")
 
         if self.party == "p2":
             d_0 = literal_eval(self.recvShares("p2","d_0"))
             d_1 = literal_eval(self.recvShares("p2","d_1"))
+            print(d_0)
+            print(d_1)
             d = [(x+y) % p for x,y in zip(d_0, d_1)]
+            print(d)
             #print(d)
             if 0 in d:
                 self.pcResult = 1
@@ -1107,7 +1110,7 @@ def test_bitDecomp():
     print("#########################################################")
     print("")
     
-def test_bitDecompOpt():
+def test_bitDecompOptTruth():
     generateBeaverTriplets(10000)
     generateMatBeaverTriplets(10000)
     print("generated triplets")
@@ -1180,6 +1183,38 @@ def test_reconstruct2PC():
         thread = threading.Thread(target=p.reconstruct2PC,args=())
         thread.start()
 
+def test_shareConvertTruth():
+    for c in range(len(p0.shares)):
+
+        thread = threading.Thread(target=p2.shareConvert, args=())
+        thread.start()
+
+        threads = [None]*len(parties)
+        for i, p in enumerate(parties):
+            threads[i] = threading.Thread(target=p.shareConvert, args=(p.shares[c],))
+            threads[i].start()
+        
+        for p,t in zip(parties, threads):
+            t.join(2)
+        thread.join(2)
+    
+    print("##########################################################")
+    print("SHARECONVERT TEST TRUTH")
+    print("Shares in ZL")    
+    real = [(s0+s1).x for s0,s1 in zip(p0.shares,p1.shares)]
+    print("Shares in ZL-1")
+    calculated = [MyType(s0.x+s1.x, is_zl=False).x for s0,s1 in zip(p0.converted_shares,p1.converted_shares)]
+    for i, (r, c) in enumerate(zip(real,calculated)):
+        if r == c:
+            continue
+        else:
+            print("r is ",r)
+            print("c is ",c)
+            print("p0 value:",p0.shares[i].x)
+            print("p1 value:",p1.shares[i].x)
+    print("##########################################################")
+    print("")
+
 def test_shareConvert():
     for c in range(len(p0.shares)):
 
@@ -1210,8 +1245,8 @@ def test_shareConvert():
     print("")
 
 def test_privateCompare():
-    x = MyType(5)
-    r = MyType(2)
+    x = MyType(4)
+    r = MyType(5)
     beta = MyType(1)
 
     x_bin = p0.convertToBitString(x)
@@ -1231,6 +1266,42 @@ def test_privateCompare():
     print("Result:",p2.pcResult)
     print("##########################################################")
     print()
+
+def test_computeMSBTruth():
+    #p0.converted_shares = [MyType(10),MyType(1),MyType(3),MyType(7),MyType(10),MyType(2),MyType(3),MyType(7),MyType(5),MyType(11)]
+    #p1.converted_shares = [MyType(2),MyType(7),MyType(11),MyType(14),MyType(5),MyType(12),MyType(12),MyType(0),MyType(10),MyType(7)]
+    start = time.time()
+    for c in range(len(p0.converted_shares)):
+        threads = [None]*len(parties)
+        for i, p in enumerate(parties):
+           
+            threads[i] = threading.Thread(target=p.computeMSB, args=(p.converted_shares[c],))
+            threads[i].start()
+           
+        
+        thread = threading.Thread(target=p2.computeMSB, args=())
+        thread.start()
+
+        for t in threads:
+            t.join(2)
+        thread.join(2)
+    
+    realMSB = [p0.convertToBitString(MyType(s0.x+s1.x,is_zl=False))[0] for s0,s1 in zip(p0.converted_shares,p1.converted_shares)]
+    calculatedMSB = [MyType(s0.x+s1.x).x for s0,s1 in zip(p0.msbResults,p1.msbResults)]
+    end = time.time()
+    print("TIME TAKEN",end - start)
+    print("##########################################################")
+    print("MSB TEST Truth")
+    for i, (r, c) in enumerate(zip(realMSB,calculatedMSB)):
+        if r == c:
+            continue
+        else:
+            print("r is ",r)
+            print("c is ",c)
+            print("p0 value:",p0.converted_shares[i].x)
+            print("p1 value:",p1.converted_shares[i].x)
+    print("#########################################################")
+    print("")
 
 def test_computeMSB():
     #p0.converted_shares = [MyType(10),MyType(1),MyType(3),MyType(7),MyType(10),MyType(2),MyType(3),MyType(7),MyType(5),MyType(11)]
@@ -1440,14 +1511,16 @@ def test_connection():
 # test_matMultList() 
 # test_matMult()
 # test_bitDecomp()
-# test_shareConvert()
-# test_computeMSB()
+# test_shareConvertTruth()
+test_shareConvert
+# test_computeMSBTruth()
+test_computeMSB
 # test_mult()   
 # test_privateCompare()
 # test_multList()
 # test_reconstruct2PC()
 # test_MyType()
 # test_connection()
-test_bitDecompOptTruth()
+# test_bitDecompOptTruth()
 # test_bitDecompOpt_time()
 # test_mult2()
