@@ -477,11 +477,9 @@ class Party:
         if self.party == "p2":
             d_0 = literal_eval(self.recvShares("p2","d_0"))
             d_1 = literal_eval(self.recvShares("p2","d_1"))
-            print(d_0)
-            print(d_1)
+
             d = [(x+y) % p for x,y in zip(d_0, d_1)]
-            print(d)
-            #print(d)
+
             if 0 in d:
                 self.pcResult = 1
                 return 1
@@ -1286,7 +1284,7 @@ def test_computeMSBTruth():
             t.join(2)
         thread.join(2)
     
-    realMSB = [p0.convertToBitString(MyType(s0.x+s1.x,is_zl=False))[0] for s0,s1 in zip(p0.converted_shares,p1.converted_shares)]
+    realMSB = [int(p0.convertToBitString(MyType(s0.x+s1.x,is_zl=False))[0]) for s0,s1 in zip(p0.converted_shares,p1.converted_shares)]
     calculatedMSB = [MyType(s0.x+s1.x).x for s0,s1 in zip(p0.msbResults,p1.msbResults)]
     end = time.time()
     print("TIME TAKEN",end - start)
@@ -1511,10 +1509,10 @@ def test_connection():
 # test_matMultList() 
 # test_matMult()
 # test_bitDecomp()
-# test_shareConvertTruth()
-test_shareConvert
-# test_computeMSBTruth()
-test_computeMSB
+test_shareConvertTruth()
+# test_shareConvert()
+test_computeMSBTruth()
+# test_computeMSB()
 # test_mult()   
 # test_privateCompare()
 # test_multList()
