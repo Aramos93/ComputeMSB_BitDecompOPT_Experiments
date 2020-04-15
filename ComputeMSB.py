@@ -293,14 +293,14 @@ class Party:
 
     def recvShares(self,recvParty,mark = "empty", length=0):
         while True:
-            if(len(self.listenBuffer)==0):
-                continue
-            else:
-                try:
-                    data = self.listenBuffer.pop(mark)
-                except:
-                    continue
+            if(mark in self.listenBuffer):
+                data = self.listenBuffer.pop(mark)
                 return(repr(data))
+            else:
+                time.sleep(0.0000001)
+                continue
+
+            
 
     def send(self, sendTo, value):
         if(self.party == "p0"):
@@ -337,9 +337,10 @@ class Party:
             else:
                 try:
                     data = self.listenBuffer.pop(mark)
+                    return(int(data))
                 except:
                     continue
-                return(int(data))
+                
            
     # Reconstruct secret by sending shares from p1 to p0 and adding them and printing them
     def reconstruct2PC(self):
@@ -523,7 +524,7 @@ class Party:
             return res
 
     
-    def matMultList(self, X, Y):
+    def matMultList(self, X, Y, id=0):
         length = len(X)
         if self.party == "p0":
             A = [None]*length; B = [None]*length; C = [None]*length; 
@@ -535,9 +536,10 @@ class Party:
             E_0_list = [((x - a) % L).matrix for x,a in zip(X,A)]
             F_0_list = [((y - b) % L).matrix for y,b in zip(Y,B)]
             toSend = [E_0_list, F_0_list]
-            self.sendShares("p1", toSend)
-            E_1, F_1 = literal_eval(self.recvShares("p0"))
-
+            self.sendShares("p1", toSend,"E_0,F_0"+str(id))
+            
+            E_1, F_1 = literal_eval(self.recvShares("p0","E_1,F_1"+str(id)))
+            
             E_1_list = [BigMat(e) for e in E_1]
             F_1_list = [BigMat(f) for f in F_1]
             
@@ -557,8 +559,9 @@ class Party:
             E_1_list = [((x - a) % L).matrix for x,a in zip(X,A)]
             F_1_list = [((y - b) % L).matrix for y,b in zip(Y,B)]
             toSend = [E_1_list, F_1_list]
-            self.sendShares("p0", toSend)
-            E_0, F_0 = literal_eval(self.recvShares("p1"))
+            self.sendShares("p0", toSend,"E_1,F_1"+str(id))
+            
+            E_0, F_0 = literal_eval(self.recvShares("p1","E_0,F_0"+str(id)))
             
             E_0_list = [BigMat(e) for e in E_0]
             F_0_list = [BigMat(f) for f in F_0]
@@ -979,7 +982,7 @@ class Party:
                 for cnnode in cnet.layers[i]:
                     leftlist.append(cnnode.left.matrix)
                     rightlist.append(cnnode.right.matrix)
-                result = self.matMultList(rightlist,leftlist)
+                result = self.matMultList(rightlist,leftlist,i)
                 result = [(c % 2) for c in result]
                 #print(result)
                 for cnode, res in zip(cnet.layers[i],result):
@@ -1030,7 +1033,7 @@ class Party:
                 for cnnode in cnet.layers[i]:
                     leftlist.append(cnnode.left.matrix)
                     rightlist.append(cnnode.right.matrix)
-                result = self.matMultList(rightlist,leftlist)
+                result = self.matMultList(rightlist,leftlist,i)
                 result = [c % 2 for c in result]
                 for cnode, res in zip(cnet.layers[i],result):
                     cnode.matrix = res
@@ -1105,8 +1108,9 @@ def test_bitDecomp():
     print("")
     
 def test_bitDecompOpt():
-    generateBeaverTriplets(20000)
-    generateMatBeaverTriplets(20000)
+    generateBeaverTriplets(10000)
+    generateMatBeaverTriplets(10000)
+    print("generated triplets")
     #p0.shares = [MyType(9223372036854775808)]
     #p1.shares = [MyType(9223372036854775809)]
     start = time.time()
@@ -1444,6 +1448,6 @@ def test_connection():
 # test_reconstruct2PC()
 # test_MyType()
 # test_connection()
-test_bitDecompOpt()
+test_bitDecompOptTruth()
 # test_bitDecompOpt_time()
 # test_mult2()
