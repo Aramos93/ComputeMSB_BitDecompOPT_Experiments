@@ -1234,8 +1234,6 @@ def test_privateCompare():
 def test_computeMSB():
     #p0.converted_shares = [MyType(10),MyType(1),MyType(3),MyType(7),MyType(10),MyType(2),MyType(3),MyType(7),MyType(5),MyType(11)]
     #p1.converted_shares = [MyType(2),MyType(7),MyType(11),MyType(14),MyType(5),MyType(12),MyType(12),MyType(0),MyType(10),MyType(7)]
-    p0.converted_shares = p0.shares
-    p1.converted_shares = p1.shares
         
     for c in range(len(p0.converted_shares)):
         threads = [None]*len(parties)
