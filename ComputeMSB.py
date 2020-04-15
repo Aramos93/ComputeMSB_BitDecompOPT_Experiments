@@ -16,6 +16,8 @@ p = 67
 seed = random.randint(0,100)
 file1 = "shares0.txt"
 file2 = "shares1.txt"
+cnet_0 = ComposeNet(L)
+cnet_1 = ComposeNet(L)
 
 ######################################################################################################################
 
@@ -332,14 +334,12 @@ class Party:
 
     def recvInt(self,recvParty,mark="empty"):
         while True:
-            if(len(self.listenBuffer)==0):
-                continue
+            if(mark in self.listenBuffer):
+                data = self.listenBuffer.pop(mark)
+                return(int(data))
             else:
-                try:
-                    data = self.listenBuffer.pop(mark)
-                    return(int(data))
-                except:
-                    continue
+                time.sleep(0.000000001)
+                continue
                 
            
     # Reconstruct secret by sending shares from p1 to p0 and adding them and printing them
@@ -477,11 +477,7 @@ class Party:
         if self.party == "p2":
             d_0 = literal_eval(self.recvShares("p2","d_0"))
             d_1 = literal_eval(self.recvShares("p2","d_1"))
-            print(d_0)
-            print(d_1)
             d = [(x+y) % p for x,y in zip(d_0, d_1)]
-            print(d)
-            #print(d)
             if 0 in d:
                 self.pcResult = 1
                 return 1
@@ -718,7 +714,7 @@ class Party:
         # Use same random seed to ensure all parties share same common randomness: r, r_0, r_1, n''
         random.seed(seed)
         n_prime_prime = MyType(random.randint(0,1))
-        r = MyType(random.randint(1,2**L)) #can't be 0 for some reason. Probably handled in PC which we don't implement
+        r = MyType(random.randint(1,2**L)) #can't be 0 for some reason. Probably handled in PC
 
         r_0, r_1 = generateMyTypeShares(r.x)
         alpha = self.wrap(r_0, r_1)
@@ -729,8 +725,10 @@ class Party:
             a_tilde = a + r_0
             beta = self.wrap(a, r_0)
             self.sendInt("p2", a_tilde.x, "a_tilde_0")
-            x_bit_0 = self.recvShares("p0", "x_bit_arr_0") # bit shares of x not used because PC not implemented (only dummied)
+            x_bit_0 = literal_eval(self.recvShares("p0", "x_bit_arr_0")) # bit shares of x not used because PC not implemented (only dummied)
             delta_0 = self.recvInt("p0", "delta_0")
+            self.privateCompare(x_bit_0, r-MyType(1),n_prime_prime)
+
             n_prime_0 = self.recvInt("p0", "n_prime_0")
             n_0 = MyType(n_prime_0 + (1 - self.partyName)*n_prime_prime.x - 2 * n_prime_prime.x * n_prime_0, is_zl=False)
             theta = MyType(beta + (1 - self.partyName) * (-alpha - 1) + delta_0 + n_0.x, is_zl=False)
@@ -743,8 +741,10 @@ class Party:
             a_tilde = a + r_1
             beta = self.wrap(a, r_1)
             self.sendInt("p2", a_tilde.x, "a_tilde_1")
-            x_bit_1 = self.recvShares("p1", "x_bit_arr_1") # bit shares of x not used because PC not implemented (only dummied)
+            x_bit_1 = literal_eval(self.recvShares("p1", "x_bit_arr_1")) 
             delta_1 = self.recvInt("p1", "delta_1")
+            self.privateCompare(x_bit_1, r-MyType(1),n_prime_prime)
+
             n_prime_1 = self.recvInt("p1", "n_prime_1")
             n_1 = MyType(n_prime_1 + (1 - self.partyName) * n_prime_prime.x - 2 * n_prime_prime.x * n_prime_1, is_zl=False)
             theta = MyType(beta + (1 - self.partyName) * (-alpha - 1) + delta_1 + n_1.x, is_zl=False)
@@ -767,7 +767,8 @@ class Party:
             self.sendInt("p0", delta_0.x, "delta_0"); self.sendInt("p1", delta_1.x, "delta_1")
             #time.sleep(0.1)
 
-            n_prime = self.dummyPC(x, r-MyType(1), n_prime_prime)
+            n_prime = self.privateCompare()
+            #n_prime = self.dummyPC(x, r-MyType(1), n_prime_prime)
             n_prime_0, n_prime_1 = generateMyTypeShares(n_prime,False)
            
 
@@ -959,7 +960,7 @@ class Party:
 
 
     def bitDecompOpt(self, a=MyType(0)):
-        cnet = ComposeNet(L)
+        #cnet = ComposeNet(L)
         if self.party == "p0":
             p0 = self.convertToBitString(a)[::-1] #reverse since 0 is lsb
             #print("p0",p0)
@@ -977,23 +978,23 @@ class Party:
                 M0[i] = BigMat( [ [p0list[i],g0[i]] , [0,0] ])
             #print("Mj (p0)",M0)
             for i in range(L-1):
-                cnet.layers[1][i].matrix = M0[i]
+                cnet_0.layers[1][i].matrix = M0[i]
 
-            for i in range(2, cnet.numLayers+1):
+            for i in range(2, cnet_0.numLayers+1):
                 leftlist = []
                 rightlist = []
-                for cnnode in cnet.layers[i]:
+                for cnnode in cnet_0.layers[i]:
                     leftlist.append(cnnode.left.matrix)
                     rightlist.append(cnnode.right.matrix)
                 result = self.matMultList(rightlist,leftlist,i)
                 result = [(c % 2) for c in result]
                 #print(result)
-                for cnode, res in zip(cnet.layers[i],result):
+                for cnode, res in zip(cnet_0.layers[i],result):
                     cnode.matrix = res
                 
                 
 
-            M1_J_0 = cnet.getMatrixResults()
+            M1_J_0 = cnet_0.getMatrixResults()
             
             
             C_J_0 = [(m.matrix[0][1]) % 2 for m in M1_J_0]
@@ -1028,22 +1029,22 @@ class Party:
                 M1[i] = BigMat( [ [p1list[i],g1[i]] , [0,1] ])
             #print("Mj (p1)",M1)
             for i in range(L-1):
-                cnet.layers[1][i].matrix = M1[i]
+                cnet_1.layers[1][i].matrix = M1[i]
 
-            for i in range(2, cnet.numLayers+1):
+            for i in range(2, cnet_1.numLayers+1):
                 leftlist = []
                 rightlist = []
-                for cnnode in cnet.layers[i]:
+                for cnnode in cnet_1.layers[i]:
                     leftlist.append(cnnode.left.matrix)
                     rightlist.append(cnnode.right.matrix)
                 result = self.matMultList(rightlist,leftlist,i)
                 result = [c % 2 for c in result]
-                for cnode, res in zip(cnet.layers[i],result):
+                for cnode, res in zip(cnet_1.layers[i],result):
                     cnode.matrix = res
                     
                     
 
-            M1_J_1 = cnet.getMatrixResults()
+            M1_J_1 = cnet_1.getMatrixResults()
             C_J_1 = [(m.matrix[0][1]) % 2 for m in M1_J_1]
             S_J_1 = [p1list[0]]
             for i in range(1,len(p1)):
@@ -1111,9 +1112,10 @@ def test_bitDecomp():
     print("")
     
 def test_bitDecompOptTruth():
-    generateBeaverTriplets(10000)
-    generateMatBeaverTriplets(10000)
-    print("generated triplets")
+    generateBeaverTriplets(200000)
+    generateMatBeaverTriplets(200000)
+    
+    print("Generated triplets")
     #p0.shares = [MyType(9223372036854775808)]
     #p1.shares = [MyType(9223372036854775809)]
     start = time.time()
@@ -1127,22 +1129,25 @@ def test_bitDecompOptTruth():
             t.join(10)
 
     end = time.time()
-    print("TIME TAKEN",end - start)
+    
 
     print("##########################################################")
     print("BITDECOMP TEST FOR TRUTH")
     real = [int(p0.convertToBitString(MyType(s0.x+s1.x))[0]) for s0,s1 in zip(p0.shares,p1.shares)]
     calculated = [(int(s0)+int(s1)) % 2 for s0,s1 in zip(p0.bitDecompOptResults,p1.bitDecompOptResults)]
-    
+    errors = 0
     for i, (r, c) in enumerate(zip(real,calculated)):
         if r == c:
             continue
         else:
+            errors = errors +1
             print("r is ",r)
             print("c is ",c)
             print("p0 value:",p0.shares[i].x)
             print("p1 value:",p1.shares[i].x)
+    print(f"Errors: {errors}/{len(p0.shares)}")
     print("#########################################################")
+    print("TIME TAKEN",end - start)
     print("")
 
 def test_bitDecompOpt_time():
@@ -1204,14 +1209,17 @@ def test_shareConvertTruth():
     real = [(s0+s1).x for s0,s1 in zip(p0.shares,p1.shares)]
     print("Shares in ZL-1")
     calculated = [MyType(s0.x+s1.x, is_zl=False).x for s0,s1 in zip(p0.converted_shares,p1.converted_shares)]
+    errors = 0
     for i, (r, c) in enumerate(zip(real,calculated)):
         if r == c:
             continue
         else:
+            errors = errors +1
             print("r is ",r)
             print("c is ",c)
             print("p0 value:",p0.shares[i].x)
             print("p1 value:",p1.shares[i].x)
+    print(f"Errors: {errors}/{len(p0.shares)}")
     print("##########################################################")
     print("")
 
@@ -1271,6 +1279,7 @@ def test_computeMSBTruth():
     #p0.converted_shares = [MyType(10),MyType(1),MyType(3),MyType(7),MyType(10),MyType(2),MyType(3),MyType(7),MyType(5),MyType(11)]
     #p1.converted_shares = [MyType(2),MyType(7),MyType(11),MyType(14),MyType(5),MyType(12),MyType(12),MyType(0),MyType(10),MyType(7)]
     start = time.time()
+    test_shareConvertTruth()
     for c in range(len(p0.converted_shares)):
         threads = [None]*len(parties)
         for i, p in enumerate(parties):
@@ -1285,22 +1294,27 @@ def test_computeMSBTruth():
         for t in threads:
             t.join(2)
         thread.join(2)
-    
-    realMSB = [p0.convertToBitString(MyType(s0.x+s1.x,is_zl=False))[0] for s0,s1 in zip(p0.converted_shares,p1.converted_shares)]
-    calculatedMSB = [MyType(s0.x+s1.x).x for s0,s1 in zip(p0.msbResults,p1.msbResults)]
+
     end = time.time()
-    print("TIME TAKEN",end - start)
+
+    realMSB = [int(p0.convertToBitString(MyType(s0.x+s1.x,is_zl=False))[0]) for s0,s1 in zip(p0.converted_shares,p1.converted_shares)]
+    calculatedMSB = [MyType(s0.x+s1.x).x for s0,s1 in zip(p0.msbResults,p1.msbResults)]
+    errors = 0
+    
     print("##########################################################")
     print("MSB TEST Truth")
     for i, (r, c) in enumerate(zip(realMSB,calculatedMSB)):
         if r == c:
             continue
         else:
+            errors = errors +1
             print("r is ",r)
             print("c is ",c)
             print("p0 value:",p0.converted_shares[i].x)
             print("p1 value:",p1.converted_shares[i].x)
+    print(f"Errors: {errors}/{len(p0.shares)}")
     print("#########################################################")
+    print("TIME TAKEN",end - start)
     print("")
 
 def test_computeMSB():
@@ -1512,15 +1526,15 @@ def test_connection():
 # test_matMult()
 # test_bitDecomp()
 # test_shareConvertTruth()
-test_shareConvert
+# test_shareConvert
 # test_computeMSBTruth()
-test_computeMSB
+# test_computeMSB
 # test_mult()   
 # test_privateCompare()
 # test_multList()
 # test_reconstruct2PC()
 # test_MyType()
 # test_connection()
-# test_bitDecompOptTruth()
+test_bitDecompOptTruth()
 # test_bitDecompOpt_time()
 # test_mult2()
