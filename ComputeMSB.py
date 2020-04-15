@@ -1525,10 +1525,11 @@ def test_connection():
 # test_matMultList() 
 # test_matMult()
 # test_bitDecomp()
-# test_shareConvertTruth()
-# test_shareConvert
-# test_computeMSBTruth()
-# test_computeMSB
+
+test_shareConvertTruth()
+# test_shareConvert()
+test_computeMSBTruth()
+# test_computeMSB()
 # test_mult()   
 # test_privateCompare()
 # test_multList()
