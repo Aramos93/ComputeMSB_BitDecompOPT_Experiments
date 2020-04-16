@@ -18,6 +18,13 @@ file1 = "shares0.txt"
 file2 = "shares1.txt"
 cnet_0 = ComposeNet(L)
 cnet_1 = ComposeNet(L)
+bytessent = 0
+p0address = '127.0.0.1'
+p1address = '127.0.0.1'
+p2address = '127.0.0.1'
+
+
+
 
 ######################################################################################################################
 
@@ -106,7 +113,7 @@ class Party:
     #### Initialize Party ######
     def __init__(self, partyName):
         # Connection Initialization
-        self.address = '127.0.0.1'
+        
 
         self.lookup = {  "p0_send_to_p1":2011,
                     "p0_send_to_p2":2021,
@@ -123,33 +130,33 @@ class Party:
                 }
         if(partyName == 0):
             self.socket01send = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
-            self.socket01send.bind((self.address,self.lookup.get('p0_send_to_p1')))
+            self.socket01send.bind((p1address,self.lookup.get('p0_send_to_p1')))
             self.socket01recv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.socket01recv.bind((self.address,self.lookup.get('p0_recv_from_p1')))
+            self.socket01recv.bind((p0address,self.lookup.get('p0_recv_from_p1')))
             self.socket02send = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.socket02send.bind((self.address,self.lookup.get('p0_send_to_p2')))
+            self.socket02send.bind((p2address,self.lookup.get('p0_send_to_p2')))
             self.socket02recv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.socket02recv.bind((self.address,self.lookup.get('p0_recv_from_p2')))
+            self.socket02recv.bind((p0address,self.lookup.get('p0_recv_from_p2')))
 
         elif(partyName == 1):
             self.socket10send = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.socket10send.bind((self.address,self.lookup.get('p1_send_to_p0')))
+            self.socket10send.bind((p0address,self.lookup.get('p1_send_to_p0')))
             self.socket10recv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.socket10recv.bind((self.address,self.lookup.get('p1_recv_from_p0')))
+            self.socket10recv.bind((p1address,self.lookup.get('p1_recv_from_p0')))
             self.socket12send = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.socket12send.bind((self.address,self.lookup.get('p1_send_to_p2')))
+            self.socket12send.bind((p2address,self.lookup.get('p1_send_to_p2')))
             self.socket12recv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.socket12recv.bind((self.address,self.lookup.get('p1_recv_from_p2')))
+            self.socket12recv.bind((p1address,self.lookup.get('p1_recv_from_p2')))
 
         elif(partyName == 2):
             self.socket20send = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.socket20send.bind((self.address,self.lookup.get('p2_send_to_p0')))
+            self.socket20send.bind((p0address,self.lookup.get('p2_send_to_p0')))
             self.socket20recv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.socket20recv.bind((self.address,self.lookup.get('p2_recv_from_p0')))
+            self.socket20recv.bind((p2address,self.lookup.get('p2_recv_from_p0')))
             self.socket21send = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.socket21send.bind((self.address,self.lookup.get('p2_send_to_p1')))
+            self.socket21send.bind((p1address,self.lookup.get('p2_send_to_p1')))
             self.socket21recv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.socket21recv.bind((self.address,self.lookup.get('p2_recv_from_p1')))
+            self.socket21recv.bind((p2address,self.lookup.get('p2_recv_from_p1')))
         
         self.listenBuffer = {}
         
@@ -221,11 +228,11 @@ class Party:
         if(self.partyName == 0):
             
 
-            thread1 = threading.Thread(target=self.connect,kwargs=dict(sendSocket=self.socket01send,targetAddress=self.address,target=1,source=0))
+            thread1 = threading.Thread(target=self.connect,kwargs=dict(sendSocket=self.socket01send,targetAddress=p1address,target=1,source=0))
             thread1.daemon = True
             thread1.start()
 
-            thread2 = threading.Thread(target=self.connect,kwargs=dict(sendSocket=self.socket02send,targetAddress=self.address,target=2,source=0))
+            thread2 = threading.Thread(target=self.connect,kwargs=dict(sendSocket=self.socket02send,targetAddress=p2address,target=2,source=0))
             thread2.daemon = True
             thread2.start()
 
@@ -239,11 +246,11 @@ class Party:
 
         if(self.partyName == 1):
            
-            thread1 = threading.Thread(target=self.connect,kwargs=dict(sendSocket=self.socket10send,targetAddress=self.address,target=0,source=1))
+            thread1 = threading.Thread(target=self.connect,kwargs=dict(sendSocket=self.socket10send,targetAddress=p0address,target=0,source=1))
             thread1.daemon = True
             thread1.start()
 
-            thread2 = threading.Thread(target=self.connect,kwargs=dict(sendSocket=self.socket12send,targetAddress=self.address,target=2,source=1))
+            thread2 = threading.Thread(target=self.connect,kwargs=dict(sendSocket=self.socket12send,targetAddress=p2address,target=2,source=1))
             thread2.daemon = True
             thread2.start()
 
@@ -257,11 +264,11 @@ class Party:
 
         if(self.partyName == 2):
 
-            thread1 = threading.Thread(target=self.connect,kwargs=dict(sendSocket=self.socket20send,targetAddress=self.address,target=0,source=2))
+            thread1 = threading.Thread(target=self.connect,kwargs=dict(sendSocket=self.socket20send,targetAddress=p0address,target=0,source=2))
             thread1.daemon = True
             thread1.start()
 
-            thread2 = threading.Thread(target=self.connect,kwargs=dict(sendSocket=self.socket21send,targetAddress=self.address,target=1,source=2))
+            thread2 = threading.Thread(target=self.connect,kwargs=dict(sendSocket=self.socket21send,targetAddress=p1address,target=1,source=2))
             thread2.daemon = True
             thread2.start()
 
@@ -288,6 +295,7 @@ class Party:
     ################ Send and Receive shares ###################
     def sendShares(self, target, value, mark="empty"):
         pickled = pickle.dumps([value,mark])
+        
         thread = threading.Thread(target=self.send,kwargs=dict(sendTo=target, value=pickled))
         thread.daemon = True
         thread.start()
@@ -305,6 +313,8 @@ class Party:
             
 
     def send(self, sendTo, value):
+        global bytessent
+        bytessent =  bytessent + len(value)
         if(self.party == "p0"):
             if(sendTo == "p1"):
                 self.socket01send.send(value)
@@ -1150,8 +1160,8 @@ def test_bitDecompTruth():
     print("")
 
 def test_bitDecompOptTruth():
-    generateBeaverTriplets(200000)
-    generateMatBeaverTriplets(200000)
+    generateBeaverTriplets(10000)
+    generateMatBeaverTriplets(10000)
     
     print("Generated triplets")
     #p0.shares = [MyType(9223372036854775808)]
@@ -1186,6 +1196,7 @@ def test_bitDecompOptTruth():
     print(f"Errors: {errors}/{len(p0.shares)}")
     print("#########################################################")
     print("TIME TAKEN",end - start)
+    print("bytes sent:",bytessent)
     print("")
 
 def test_bitDecompOpt_time():
@@ -1353,6 +1364,7 @@ def test_computeMSBTruth():
     print(f"Errors: {errors}/{len(p0.shares)}")
     print("#########################################################")
     print("TIME TAKEN",end - start)
+    print("bytes sent:",bytessent)
     print("")
 
 def test_computeMSB():
@@ -1563,11 +1575,11 @@ def test_connection():
 # test_matMultList() 
 # test_matMult()
 #test_bitDecomp()
-test_bitDecompTruth()
+# test_bitDecompTruth()
 
 #test_shareConvertTruth()
 # test_shareConvert()
-#test_computeMSBTruth()
+# test_computeMSBTruth()
 # test_computeMSB()
 # test_mult()   
 # test_privateCompare()
@@ -1575,6 +1587,6 @@ test_bitDecompTruth()
 # test_reconstruct2PC()
 # test_MyType()
 # test_connection()
-#test_bitDecompOptTruth()
+test_bitDecompOptTruth()
 # test_bitDecompOpt_time()
 # test_mult2()
