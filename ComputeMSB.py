@@ -6,7 +6,6 @@ import time
 from ast import literal_eval
 import threading
 import time
-import numpy as np
 from ComposeNet import ComposeNet
 from BigMat import BigMat
 
@@ -30,11 +29,6 @@ p2address = '127.0.0.1'
 
 
 ##################################################### Utilities ######################################################
-modularize = lambda t: t % 2**L 
-matmod = np.vectorize(modularize, otypes=[np.uint64]) 
-
-modularize = lambda t: t % 2 
-matmod2 = np.vectorize(modularize, otypes=[np.uint64])
 
 def generateMatrixShares(M):
     M_0 = BigMat([[random.randint(0, (2**L)-1), random.randint(0, (2**L)-1)],[random.randint(0, (2**L)-1), random.randint(0, (2**L)-1)]])
@@ -1483,8 +1477,8 @@ def test_multList():
 
 def test_matMult():
     generateMatBeaverTriplets(1)
-    X = np.array([[1,2], [3,4]])
-    Y = np.array([[4,3], [2,1]])
+    #X = np.array([[1,2], [3,4]])
+    #Y = np.array([[4,3], [2,1]])
     # X_0 = np.array([[0,0], [0,0]])
     # Y_0 = np.array([[0,0], [0,0]])
     # X_1 = X
@@ -1512,8 +1506,8 @@ def test_matMult():
    
 def test_matMultList():
     generateMatBeaverTriplets(5)
-    X = np.array([[1,2], [3,4]])
-    Y = np.array([[4,3], [2,1]])
+    #X = np.array([[1,2], [3,4]])
+    #Y = np.array([[4,3], [2,1]])
     
     X_0, X_1 = generateMatrixShares(X)
     Y_0, Y_1 = generateMatrixShares(Y)
