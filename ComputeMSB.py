@@ -228,7 +228,7 @@ class Party:
             thread4 = threading.Thread(target=self.listen,kwargs=dict(listenSocket=self.socket02recv))
             thread4.daemon = True            
             thread4.start()
-            time.sleep(0.01)
+            time.sleep(1)
             thread1 = threading.Thread(target=self.connect,kwargs=dict(sendSocket=self.socket01send,targetAddress=p1address,target=1,source=0))
             thread1.daemon = True
             thread1.start()
@@ -248,7 +248,7 @@ class Party:
             thread4 = threading.Thread(target=self.listen,kwargs=dict(listenSocket=self.socket12recv))
             thread4.daemon = True            
             thread4.start()
-            time.sleep(0.01)
+            time.sleep(1)
             thread1 = threading.Thread(target=self.connect,kwargs=dict(sendSocket=self.socket10send,targetAddress=p0address,target=0,source=1))
             thread1.daemon = True
             thread1.start()
@@ -269,7 +269,7 @@ class Party:
             thread4.daemon = True            
             thread4.start()
 
-            time.sleep(0.01)
+            time.sleep(1)
             thread1 = threading.Thread(target=self.connect,kwargs=dict(sendSocket=self.socket20send,targetAddress=p0address,target=0,source=2))
             thread1.daemon = True
             thread1.start()
