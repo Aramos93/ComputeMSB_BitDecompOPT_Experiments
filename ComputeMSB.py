@@ -221,7 +221,14 @@ class Party:
     def setupCommunication(self):
         if(self.partyName == 0):
             
+            thread3 = threading.Thread(target=self.listen,kwargs=dict(listenSocket=self.socket01recv))
+            thread3.daemon = True            
+            thread3.start()
 
+            thread4 = threading.Thread(target=self.listen,kwargs=dict(listenSocket=self.socket02recv))
+            thread4.daemon = True            
+            thread4.start()
+            time.sleep(0.01)
             thread1 = threading.Thread(target=self.connect,kwargs=dict(sendSocket=self.socket01send,targetAddress=p1address,target=1,source=0))
             thread1.daemon = True
             thread1.start()
@@ -230,23 +237,9 @@ class Party:
             thread2.daemon = True
             thread2.start()
 
-            thread3 = threading.Thread(target=self.listen,kwargs=dict(listenSocket=self.socket01recv))
-            thread3.daemon = True            
-            thread3.start()
-
-            thread4 = threading.Thread(target=self.listen,kwargs=dict(listenSocket=self.socket02recv))
-            thread4.daemon = True            
-            thread4.start()
+            
 
         if(self.partyName == 1):
-           
-            thread1 = threading.Thread(target=self.connect,kwargs=dict(sendSocket=self.socket10send,targetAddress=p0address,target=0,source=1))
-            thread1.daemon = True
-            thread1.start()
-
-            thread2 = threading.Thread(target=self.connect,kwargs=dict(sendSocket=self.socket12send,targetAddress=p2address,target=2,source=1))
-            thread2.daemon = True
-            thread2.start()
 
             thread3 = threading.Thread(target=self.listen,kwargs=dict(listenSocket=self.socket10recv))
             thread3.daemon = True            
@@ -255,16 +248,18 @@ class Party:
             thread4 = threading.Thread(target=self.listen,kwargs=dict(listenSocket=self.socket12recv))
             thread4.daemon = True            
             thread4.start()
-
-        if(self.partyName == 2):
-
-            thread1 = threading.Thread(target=self.connect,kwargs=dict(sendSocket=self.socket20send,targetAddress=p0address,target=0,source=2))
+            time.sleep(0.01)
+            thread1 = threading.Thread(target=self.connect,kwargs=dict(sendSocket=self.socket10send,targetAddress=p0address,target=0,source=1))
             thread1.daemon = True
             thread1.start()
 
-            thread2 = threading.Thread(target=self.connect,kwargs=dict(sendSocket=self.socket21send,targetAddress=p1address,target=1,source=2))
+            thread2 = threading.Thread(target=self.connect,kwargs=dict(sendSocket=self.socket12send,targetAddress=p2address,target=2,source=1))
             thread2.daemon = True
             thread2.start()
+
+            
+
+        if(self.partyName == 2):
 
             thread3 = threading.Thread(target=self.listen,kwargs=dict(listenSocket=self.socket20recv))
             thread3.daemon = True            
@@ -273,6 +268,17 @@ class Party:
             thread4 = threading.Thread(target=self.listen,kwargs=dict(listenSocket=self.socket21recv))
             thread4.daemon = True            
             thread4.start()
+
+            time.sleep(0.01)
+            thread1 = threading.Thread(target=self.connect,kwargs=dict(sendSocket=self.socket20send,targetAddress=p0address,target=0,source=2))
+            thread1.daemon = True
+            thread1.start()
+
+            thread2 = threading.Thread(target=self.connect,kwargs=dict(sendSocket=self.socket21send,targetAddress=p1address,target=1,source=2))
+            thread2.daemon = True
+            thread2.start()
+
+            
         
     # Get actual values of shares from MyType's
     def getShareVals(self):
