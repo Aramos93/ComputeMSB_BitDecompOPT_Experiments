@@ -295,6 +295,7 @@ class Party:
     ################ Send and Receive shares ###################
     def sendShares(self, target, value, mark="empty"):
         pickled = pickle.dumps([value,mark])
+        
         thread = threading.Thread(target=self.send,kwargs=dict(sendTo=target, value=pickled))
         thread.daemon = True
         thread.start()
@@ -312,6 +313,8 @@ class Party:
             
 
     def send(self, sendTo, value):
+        global bytessent
+        bytessent =  bytessent + len(value)
         if(self.party == "p0"):
             if(sendTo == "p1"):
                 self.socket01send.send(value)
