@@ -17,10 +17,16 @@ file1 = "shares0.txt"
 file2 = "shares1.txt"
 cnet_0 = ComposeNet(L)
 cnet_1 = ComposeNet(L)
-bytessent = 0
 p0address = '127.0.0.1'
 p1address = '127.0.0.1'
 p2address = '127.0.0.1'
+lock = threading.Lock()
+bytessent = 0
+bytes_list = []
+times_list = []
+subRoutineTimer1 = 0
+subRoutineByteCounter1 = 0
+
 
 
 
@@ -172,7 +178,6 @@ class Party:
         self.matTriplets = []
         self.triplets = []
         self.bitDecompOptResults = []
-        self.pcResult = None
         if partyName == 0:
             self.readFile(file1)
         elif partyName == 1:
@@ -228,7 +233,7 @@ class Party:
             thread4 = threading.Thread(target=self.listen,kwargs=dict(listenSocket=self.socket02recv))
             thread4.daemon = True            
             thread4.start()
-            time.sleep(1)
+    
             thread1 = threading.Thread(target=self.connect,kwargs=dict(sendSocket=self.socket01send,targetAddress=p1address,target=1,source=0))
             thread1.daemon = True
             thread1.start()
@@ -248,7 +253,7 @@ class Party:
             thread4 = threading.Thread(target=self.listen,kwargs=dict(listenSocket=self.socket12recv))
             thread4.daemon = True            
             thread4.start()
-            time.sleep(1)
+           
             thread1 = threading.Thread(target=self.connect,kwargs=dict(sendSocket=self.socket10send,targetAddress=p0address,target=0,source=1))
             thread1.daemon = True
             thread1.start()
@@ -269,7 +274,7 @@ class Party:
             thread4.daemon = True            
             thread4.start()
 
-            time.sleep(1)
+           
             thread1 = threading.Thread(target=self.connect,kwargs=dict(sendSocket=self.socket20send,targetAddress=p0address,target=0,source=2))
             thread1.daemon = True
             thread1.start()
@@ -398,8 +403,9 @@ class Party:
     
 
     def privateCompare(self, x=[], r=MyType(0), beta=MyType(-1)):
+
         if self.party != "p2":
-            random.seed(123)
+            random.seed(seed)
             x = x[::-1]
             t = MyType(r.x+1)
             t = self.convertToBitString(t)
@@ -485,15 +491,34 @@ class Party:
             self.sendShares("p2", d, "d_1")
 
         if self.party == "p2":
+            global bytessent
+            global subRoutineTimer1 
+            global subRoutineByteCounter1
+            lock.acquire()
+            start_byte_count = bytessent
+            lock.release()
+            start = time.time()
+
             d_0 = literal_eval(self.recvShares("p2","d_0"))
             d_1 = literal_eval(self.recvShares("p2","d_1"))
             d = [(x+y) % p for x,y in zip(d_0, d_1)]
+            end = time.time()
+            lock.acquire()
+            end_byte_count = bytessent
+            subRoutineTimer1 = subRoutineTimer1 + (end-start)
+            subRoutineByteCounter1 = subRoutineByteCounter1 + (end_byte_count-start_byte_count)
+            lock.release()
             if 0 in d:
                 self.pcResult = 1
                 return 1
             else:
                 self.pcResult = 0
                 return 0
+
+            
+        
+        
+        
 
     # Mimic private compare - actually just compares reconstructed value
     def dummyPC(self, x, r, beta):   
@@ -753,6 +778,7 @@ class Party:
             self.sendInt("p2", a_tilde.x, "a_tilde_1")
             x_bit_1 = literal_eval(self.recvShares("p1", "x_bit_arr_1")) 
             delta_1 = self.recvInt("p1", "delta_1")
+    
             self.privateCompare(x_bit_1, r-MyType(1),n_prime_prime)
 
             n_prime_1 = self.recvInt("p1", "n_prime_1")
@@ -775,8 +801,7 @@ class Party:
             self.sendShares("p0", x_bit_arr_0,"x_bit_arr_0"); self.sendShares("p1", x_bit_arr_1, "x_bit_arr_1")
             #time.sleep(0.1)
             self.sendInt("p0", delta_0.x, "delta_0"); self.sendInt("p1", delta_1.x, "delta_1")
-            #time.sleep(0.1)
-
+            #time.sleep(0.1)   
             n_prime = self.privateCompare()
             #n_prime = self.dummyPC(x, r-MyType(1), n_prime_prime)
             n_prime_0, n_prime_1 = generateMyTypeShares(n_prime,False)
@@ -892,6 +917,7 @@ class Party:
             #time.sleep(0.1)
             #r = MyType(self.recvInt("p2"), is_zl=False)
             #print("p2 r: ", r.x)
+  
             beta_prime = self.privateCompare()
             #print("beta': ",beta_prime)
             beta_prime_0, beta_prime_1 = generateMyTypeShares(beta_prime)
@@ -1238,6 +1264,9 @@ def test_reconstruct2PC():
         thread.start()
 
 def test_shareConvertTruth():
+    global bytessent
+    bytessent = 0
+    start = time.time()
     for c in range(len(p0.shares)):
 
         thread = threading.Thread(target=p2.shareConvert, args=())
@@ -1251,14 +1280,16 @@ def test_shareConvertTruth():
         for p,t in zip(parties, threads):
             t.join(2)
         thread.join(2)
-    
-    print("##########################################################")
-    print("SHARECONVERT TEST TRUTH")
-    print("Shares in ZL")    
+    end = time.time()
+    times_list.append(end-start)
+    bytes_list.append(bytessent)
+     
     real = [(s0+s1).x for s0,s1 in zip(p0.shares,p1.shares)]
-    print("Shares in ZL-1")
     calculated = [MyType(s0.x+s1.x, is_zl=False).x for s0,s1 in zip(p0.converted_shares,p1.converted_shares)]
     errors = 0
+
+    print("##########################################################")
+    print(f"SHARECONVERT TEST TRUTH for {len(p0.shares)} inputs") 
     for i, (r, c) in enumerate(zip(real,calculated)):
         if r == c:
             continue
@@ -1268,7 +1299,9 @@ def test_shareConvertTruth():
             print("c is ",c)
             print("p0 value:",p0.shares[i].x)
             print("p1 value:",p1.shares[i].x)
-    print(f"Errors: {errors}/{len(p0.shares)}")
+    print(f"Errors: {errors}/{len(p0.shares)}") 
+    print("ShareConvert time:", end-start)
+    print("Bytes sent in ShareConvert:",bytessent)
     print("##########################################################")
     print("")
 
@@ -1291,12 +1324,16 @@ def test_shareConvert():
     print("SHARECONVERT TEST")
     print("Shares in ZL")    
     print([s.x for s in p0.shares])
+    print()
     print([s.x for s in p1.shares])
+    print()
     print("Reconstructed: ", [(s0+s1).x for s0,s1 in zip(p0.shares,p1.shares)])
     print()
     print("Shares in ZL-1")
     print([s.x for s in p0.converted_shares])
+    print()
     print([s.x for s in p1.converted_shares])
+    print()
     print("Reconstructed: ", [MyType(s0.x+s1.x, is_zl=False).x for s0,s1 in zip(p0.converted_shares,p1.converted_shares)])
     print("##########################################################")
     print("")
@@ -1325,10 +1362,13 @@ def test_privateCompare():
     print()
 
 def test_computeMSBTruth():
-    #p0.converted_shares = [MyType(10),MyType(1),MyType(3),MyType(7),MyType(10),MyType(2),MyType(3),MyType(7),MyType(5),MyType(11)]
-    #p1.converted_shares = [MyType(2),MyType(7),MyType(11),MyType(14),MyType(5),MyType(12),MyType(12),MyType(0),MyType(10),MyType(7)]
-    start = time.time()
+    
     test_shareConvertTruth()
+    global bytessent
+    
+    bytessent = 0
+
+    start = time.time()
     for c in range(len(p0.converted_shares)):
         threads = [None]*len(parties)
         for i, p in enumerate(parties):
@@ -1345,13 +1385,16 @@ def test_computeMSBTruth():
         thread.join(2)
 
     end = time.time()
+    times_list.append(end-start)
+    bytes_list.append(bytessent)
+
 
     realMSB = [int(p0.convertToBitString(MyType(s0.x+s1.x,is_zl=False))[0]) for s0,s1 in zip(p0.converted_shares,p1.converted_shares)]
     calculatedMSB = [MyType(s0.x+s1.x).x for s0,s1 in zip(p0.msbResults,p1.msbResults)]
     errors = 0
     
     print("##########################################################")
-    print("MSB TEST Truth")
+    print(f"MSB TEST TRUTH for {len(p0.shares)} inputs")
     for i, (r, c) in enumerate(zip(realMSB,calculatedMSB)):
         if r == c:
             continue
@@ -1362,9 +1405,9 @@ def test_computeMSBTruth():
             print("p0 value:",p0.converted_shares[i].x)
             print("p1 value:",p1.converted_shares[i].x)
     print(f"Errors: {errors}/{len(p0.shares)}")
+    print("ComputeMSB time:",end - start)
+    print("Bytes sent in ComputeMSB:",bytessent)
     print("#########################################################")
-    print("TIME TAKEN",end - start)
-    print("bytes sent:",bytessent)
     print("")
 
 def test_computeMSB():
@@ -1571,15 +1614,34 @@ def test_connection():
     print(p0.recvInt("p2"))
 
 
+def print_total_data():
+    global subRoutineTimer1
+    global subRoutineByteCounter1
+
+    print("Total time taken:",sum(times_list))
+    print("Total bytes sent:",sum(bytes_list))
+    print()
+    print("Avg time per ShareConvert:",times_list[0]/len(p0.shares))
+    if len(times_list) > 1:
+        print("Avg time per ComputeMSB:",times_list[1]/len(p0.shares))
+        print("Avg time per PrivateCompare:",subRoutineTimer1/(2*len(p0.shares)))
+    else:
+        print("Avg time per PrivateCompare:",subRoutineTimer1/len(p0.shares))
+    print()
+    print("Avg number of bytes sent per ShareConvert:",bytes_list[0]/len(p0.shares))
+    if len(bytes_list) > 1:
+        print("Avg number of bytes sent per ComputeMSB:",bytes_list[1]/len(p0.shares))
+        print("Avg number of bytes sent per PrivateCompare:",subRoutineByteCounter1/(2*len(p0.shares)))
+    else:
+        print("Avg number of bytes sent per PrivateCompare:",subRoutineByteCounter1/len(p0.shares))
 
 # test_matMultList() 
 # test_matMult()
-#test_bitDecomp()
+# test_bitDecomp()
 # test_bitDecompTruth()
-
-#test_shareConvertTruth()
+# test_shareConvertTruth()
 # test_shareConvert()
-# test_computeMSBTruth()
+test_computeMSBTruth()
 # test_computeMSB()
 # test_mult()   
 # test_privateCompare()
@@ -1587,6 +1649,9 @@ def test_connection():
 # test_reconstruct2PC()
 # test_MyType()
 # test_connection()
-test_bitDecompOptTruth()
+# test_bitDecompOptTruth()
 # test_bitDecompOpt_time()
 # test_mult2()
+
+print_total_data()
+
