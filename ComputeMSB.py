@@ -230,7 +230,7 @@ class Party:
                     print("first one",data_arr0)
                     print("second one",data_arr1)
                     return
-            print(data_arr) 
+            print(data) 
             data_arr = pickle.loads(data)
             self.listenBuffer[data_arr[1]] = data_arr[0]
             self.seenlist.append(data_arr[1])
