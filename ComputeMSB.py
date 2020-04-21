@@ -219,9 +219,9 @@ class Party:
                     self.seenlist.append(data_arr0[1])
                     self.listenBuffer[data_arr1[1]] = data_arr1[0]
                     self.seenlist.append(data_arr1[1])
-                    #print("this is crazy")
-                    #print("first one",data_arr0)
-                    #print("second one",data_arr1)
+                    print("this is crazy")
+                    print("first one",data_arr0)
+                    print("second one",data_arr1)
                     return 
             data_arr = pickle.loads(data)
             self.listenBuffer[data_arr[1]] = data_arr[0]
@@ -346,7 +346,7 @@ class Party:
     ################ Send and Receive shares ###################
     def sendShares(self, target, value, mark="empty"):
         pickled = pickle.dumps([value,mark])
-        
+        time.sleep(0.000001)
         thread = threading.Thread(target=self.send,kwargs=dict(sendTo=target, value=pickled))
         thread.daemon = True
         thread.start()
@@ -363,13 +363,12 @@ class Party:
                 
                 return(repr(data))
             else:
-                time.sleep(0.00001)
+                time.sleep(0.00000001)
                 continue
 
             
 
     def send(self, sendTo, value):
-        time.sleep(0.05)
         global bytessent
         bytessent =  bytessent + len(value)
         if(self.party == "p0"):
@@ -420,7 +419,7 @@ class Party:
                 data = self.listenBuffer.pop(mark)
                 return(int(data))
             else:
-                #time.sleep(0.0001)
+                time.sleep(0.0000001)
                 continue
                 
            
@@ -561,20 +560,20 @@ class Party:
             global bytessent
             global subRoutineTimer1 
             global subRoutineByteCounter1
-            lock.acquire()
+            #lock.acquire()
             start_byte_count = bytessent
-            lock.release()
+            #lock.release()
             start = time.time()
 
             d_0 = literal_eval(self.recvShares("p2","d_0"))
             d_1 = literal_eval(self.recvShares("p2","d_1"))
             d = [(x+y) % p for x,y in zip(d_0, d_1)]
             end = time.time()
-            lock.acquire()
+            #lock.acquire()
             end_byte_count = bytessent
             subRoutineTimer1 = subRoutineTimer1 + (end-start)
             subRoutineByteCounter1 = subRoutineByteCounter1 + (end_byte_count-start_byte_count)
-            lock.release()
+            #lock.release()
             if 0 in d:
                 self.pcResult = 1
                 return 1
@@ -1620,12 +1619,12 @@ def test_matMult():
     print("MATMULT Test")
     print("MATRIX X:", X)
     print("Matrix Y:", Y)
-    print("Result XY:", [matmod(s0+s1) for s0, s1 in zip(p0.matMultResults, p1.matMultResults)])
+    print("Result XY:", [s0+s1 % L for s0, s1 in zip(p0.matMultResults, p1.matMultResults)])
    
 def test_matMultList():
     generateMatBeaverTriplets(5)
-    #X = np.array([[1,2], [3,4]])
-    #Y = np.array([[4,3], [2,1]])
+    X = np.array([[1,2], [3,4]])
+    Y = np.array([[4,3], [2,1]])
     
     X_0, X_1 = generateMatrixShares(X)
     Y_0, Y_1 = generateMatrixShares(Y)
@@ -1652,7 +1651,7 @@ def test_matMultList():
     print("MATMULTLIST Test")
     print("MATRIX X:", X)
     print("Matrix Y:", Y)
-    print("Result XY:", [matmod(s0+s1) for s0, s1 in zip(p0.matMultListResults[0], p1.matMultListResults[0])])
+    print("Result XY:", [s0+s1 % L for s0, s1 in zip(p0.matMultListResults[0], p1.matMultListResults[0])])
    
 def test_connection():
     p0.sendInt("p2",100)
@@ -1710,7 +1709,7 @@ def print_total_data():
 # test_bitDecompTruth()
 # test_shareConvertTruth()
 # test_shareConvert()
-test_computeMSBTruth()
+# test_computeMSBTruth()
 # test_computeMSB()
 # test_mult()   
 # test_privateCompare()
@@ -1718,7 +1717,7 @@ test_computeMSBTruth()
 # test_reconstruct2PC()
 # test_MyType()
 # test_connection()
-# test_bitDecompOptTruth()
+test_bitDecompOptTruth()
 # test_bitDecompOpt_time()
 # test_mult2()
 
@@ -1728,5 +1727,5 @@ test_computeMSBTruth()
 #p1.closeCommunication()
 #p2.closeCommunication()
 
-print_total_data()
+#print_total_data()
 
