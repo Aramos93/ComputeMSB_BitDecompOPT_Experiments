@@ -383,21 +383,21 @@ class Party:
         print(value)
         if(self.party == "p0"):
             if(sendTo == "p1"):
-                self.socket01send.sendall(value)
+                self.socket01send.send(value)
             elif(sendTo == "p2"):
-                self.socket02send.sendall(value)
+                self.socket02send.send(value)
 
         elif(self.party == "p1"):
             if(sendTo == "p2"):
-                self.socket12send.sendall(value)
+                self.socket12send.send(value)
             elif(sendTo == "p0"):
-                self.socket10send.sendall(value)
+                self.socket10send.send(value)
 
         elif(self.party == "p2"):
             if(sendTo == "p0"):
-                self.socket20send.sendall(value)
+                self.socket20send.send(value)
             elif(sendTo == "p1"):
-                self.socket21send.sendall(value)
+                self.socket21send.send(value)
 
     def closeCommunication(self):
         global communication_On
