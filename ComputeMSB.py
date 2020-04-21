@@ -1310,7 +1310,7 @@ def test_bitDecompOptDist():
     generateMatBeaverTriplets(100)
     start = time.time()
     for c in range(len(party.shares)):
-        party.bitDecompOpt(c)
+        party.bitDecompOpt(party.shares[c])
     end = time.time()
     
 
