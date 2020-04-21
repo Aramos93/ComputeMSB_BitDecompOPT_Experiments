@@ -279,9 +279,9 @@ class Party:
             thread3.start()
             
 
-            thread4 = threading.Thread(target=self.listen,kwargs=dict(listenSocket=self.socket02recv))
-            thread4.daemon = True              
-            thread4.start()
+            # thread4 = threading.Thread(target=self.listen,kwargs=dict(listenSocket=self.socket02recv))
+            # thread4.daemon = True              
+            # thread4.start()
             
 
 
@@ -289,9 +289,9 @@ class Party:
             thread1.daemon = True
             thread1.start()
 
-            thread2 = threading.Thread(target=self.connect,kwargs=dict(sendSocket=self.socket02send,targetAddress=p2address,target=2,source=0))
-            thread2.daemon = True
-            thread2.start()
+            # thread2 = threading.Thread(target=self.connect,kwargs=dict(sendSocket=self.socket02send,targetAddress=p2address,target=2,source=0))
+            # thread2.daemon = True
+            # thread2.start()
 
             
 
@@ -302,18 +302,18 @@ class Party:
             print("listen10")            
             thread3.start()
 
-            thread4 = threading.Thread(target=self.listen,kwargs=dict(listenSocket=self.socket12recv))
-            thread4.daemon = True  
-            print("listen12")            
-            thread4.start()
+            # thread4 = threading.Thread(target=self.listen,kwargs=dict(listenSocket=self.socket12recv))
+            # thread4.daemon = True  
+            # print("listen12")            
+            # thread4.start()
 
             thread1 = threading.Thread(target=self.connect,kwargs=dict(sendSocket=self.socket10send,targetAddress=p0address,target=0,source=1))
             thread1.daemon = True
             thread1.start()
 
-            thread2 = threading.Thread(target=self.connect,kwargs=dict(sendSocket=self.socket12send,targetAddress=p2address,target=2,source=1))
-            thread2.daemon = True
-            thread2.start()
+            # thread2 = threading.Thread(target=self.connect,kwargs=dict(sendSocket=self.socket12send,targetAddress=p2address,target=2,source=1))
+            # thread2.daemon = True
+            # thread2.start()
 
             
 
