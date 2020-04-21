@@ -218,11 +218,11 @@ class Party:
         while communication_On:
             data = listenSocket.recv(4096)
             while(chr(data[-1]) != '.'):
-                print("gotta wait till a dot., this is what i have \n",data)
+                #print("gotta wait till a dot., this is what i have \n",data)
                 more = listenSocket.recv(4096)
                 data += more
 
-            print(data, "\n", "length of data ",len(data))
+            #print(data, "\n", "length of data ",len(data))
             if(len(data) > 1600):
                 if(data.count(b'\xbee') > 1): 
                     arr = data.split(b'\xbee.')
@@ -374,7 +374,7 @@ class Party:
             #print("seen so far: ",self.seenlist)
             if(mark in self.listenBuffer):
                 data = self.listenBuffer.pop(mark)
-                print("taking",mark,"out of the buffer")
+                #print("taking",mark,"out of the buffer")
                 return(repr(data))
             
 
