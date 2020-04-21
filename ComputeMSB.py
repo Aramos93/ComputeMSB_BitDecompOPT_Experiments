@@ -379,6 +379,8 @@ class Party:
     def send(self, sendTo, value):
         global bytessent
         bytessent =  bytessent + len(value)
+        print("sending the following:")
+        print(value)
         if(self.party == "p0"):
             if(sendTo == "p1"):
                 self.socket01send.sendall(value)
