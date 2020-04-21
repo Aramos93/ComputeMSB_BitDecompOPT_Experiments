@@ -229,7 +229,8 @@ class Party:
                     print("this is crazy")
                     print("first one",data_arr0)
                     print("second one",data_arr1)
-                    return 
+                    return
+            print(data_arr) 
             data_arr = pickle.loads(data)
             self.listenBuffer[data_arr[1]] = data_arr[0]
             self.seenlist.append(data_arr[1])
@@ -667,7 +668,7 @@ class Party:
             E_1_list = [((x - a) % L).matrix for x,a in zip(X,A)]
             F_1_list = [((y - b) % L).matrix for y,b in zip(Y,B)]
             toSend = [E_1_list, F_1_list]
-            print("sending ","E_0,F_0"+id)
+            print("sending ","E_1,F_1"+id)
             self.sendShares("p0", toSend,"E_1,F_1"+id)
             
             E_0, F_0 = literal_eval(self.recvShares("p1","E_0,F_0"+id))
