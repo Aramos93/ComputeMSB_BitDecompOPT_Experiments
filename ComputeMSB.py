@@ -57,6 +57,7 @@ def generateMyTypeShares(x, in_zl=True):
     return MyType(r, is_zl=in_zl), MyType(x-r, is_zl=in_zl)
 
 def generateBeaverTriplets(N):
+    random.seed(seed)
     for _ in range(N):
         a = random.randint(0, 2**L)
         b = random.randint(0, 2**L)
@@ -71,6 +72,7 @@ def generateBeaverTriplets(N):
             party.triplets.append([a_1.x, b_1.x, c_1.x])
 
 def generateMatBeaverTriplets(N):
+    random.seed(seed)
     for _ in range(N):
         A = BigMat([[random.randint(0, (2**L)-1), random.randint(0, (2**L)-1)],[random.randint(0, (2**L)-1), random.randint(0, (2**L)-1)]])
         B = BigMat([[random.randint(0, (2**L)-1), random.randint(0, (2**L)-1)],[random.randint(0, (2**L)-1), random.randint(0, (2**L)-1)]])
