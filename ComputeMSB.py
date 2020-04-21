@@ -1313,8 +1313,8 @@ def test_bitDecompOptTruth():
     print("")
 
 def test_bitDecompOptDist():
-    generateBeaverTriplets(100)
-    generateMatBeaverTriplets(100)
+    generateBeaverTriplets(1000)
+    generateMatBeaverTriplets(1000)
     start = time.time()
     for c in range(len(party.shares)):
         party.bitDecompOpt(party.shares[c])
