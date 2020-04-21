@@ -216,11 +216,11 @@ class Party:
         while communication_On:
             data = listenSocket.recv(4096)
             while(chr(data[-1]) != '.'):
+                print("gotta wait till a dot., this is what i have \n",data)
                 more = listenSocket.recv(4096)
                 data += more
 
-            #print(data)
-            #print("length of data ",len(data))
+            print(data, "\n", "length of data ",len(data))
             if(len(data) > 1600):
                 if(data.count(b'\xbee') > 1): 
                     arr = data.split(b'\xbee.')
@@ -383,25 +383,24 @@ class Party:
     def send(self, sendTo, value):
         global bytessent
         bytessent =  bytessent + len(value)
-        #print("sending the following:")
-        #print(value)
+        print("sending the following: \n",value)
         if(self.party == "p0"):
             if(sendTo == "p1"):
-                self.socket01send.send(value)
+                self.socket01send.sendall(value)
             elif(sendTo == "p2"):
-                self.socket02send.send(value)
+                self.socket02send.sendall(value)
 
         elif(self.party == "p1"):
             if(sendTo == "p2"):
-                self.socket12send.send(value)
+                self.socket12send.sendall(value)
             elif(sendTo == "p0"):
-                self.socket10send.send(value)
+                self.socket10send.sendall(value)
 
         elif(self.party == "p2"):
             if(sendTo == "p0"):
-                self.socket20send.send(value)
+                self.socket20send.sendall(value)
             elif(sendTo == "p1"):
-                self.socket21send.send(value)
+                self.socket21send.sendall(value)
 
     def closeCommunication(self):
         global communication_On
