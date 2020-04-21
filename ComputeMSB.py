@@ -145,12 +145,12 @@ class Party:
             self.socket01recv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.socket01recv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             self.socket01recv.bind(('0.0.0.0',self.lookup.get('p0_recv_from_p1')))
-            self.socket02send = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.socket02send.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            self.socket02send.bind(('0.0.0.0',self.lookup.get('p0_send_to_p2')))
-            self.socket02recv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.socket02recv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            self.socket02recv.bind(('0.0.0.0',self.lookup.get('p0_recv_from_p2')))
+            # self.socket02send = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            # self.socket02send.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            # self.socket02send.bind(('0.0.0.0',self.lookup.get('p0_send_to_p2')))
+            # self.socket02recv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            # self.socket02recv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            # self.socket02recv.bind(('0.0.0.0',self.lookup.get('p0_recv_from_p2')))
 
         elif(partyName == 1):
             self.socket10send = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -159,12 +159,12 @@ class Party:
             self.socket10recv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.socket10recv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             self.socket10recv.bind(('0.0.0.0',self.lookup.get('p1_recv_from_p0')))
-            self.socket12send = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.socket12send.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            self.socket12send.bind(('0.0.0.0',self.lookup.get('p1_send_to_p2')))
-            self.socket12recv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.socket12recv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            self.socket12recv.bind(('0.0.0.0',self.lookup.get('p1_recv_from_p2')))
+            # self.socket12send = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            # self.socket12send.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            # self.socket12send.bind(('0.0.0.0',self.lookup.get('p1_send_to_p2')))
+            # self.socket12recv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            # self.socket12recv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            # self.socket12recv.bind(('0.0.0.0',self.lookup.get('p1_recv_from_p2')))
 
         elif(partyName == 2):
             self.socket20send = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -214,7 +214,7 @@ class Party:
         listenSocket.listen()
         listenSocket, _ = listenSocket.accept()
         while communication_On:
-            data = listenSocket.recv(3000)
+            data = listenSocket.recv(4096)
             #print(data)
             #print("length of data ",len(data))
             if(len(data) > 1600):
