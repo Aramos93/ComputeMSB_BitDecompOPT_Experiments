@@ -816,8 +816,8 @@ class Party:
             self.sendShares("p0", toSend,"g1"+str(ident))
             E_0_list, F_0_list = literal_eval(self.recvShares("p1","g0"+str(ident)))
                
-            E = [MyType(e0+e1).x for e0,e1 % 2 in zip(E_0_list,E_1_list)]
-            F = [MyType(f0+f1).x for f0,f1 % 2 in zip(F_0_list,F_1_list)]
+            E = [MyType(e0+e1).x % 2 for e0,e1 in zip(E_0_list,E_1_list)]
+            F = [MyType(f0+f1).x % 2 for f0,f1  in zip(F_0_list,F_1_list)]
 
             res = [MyType(-1*(e * f) + (x * f) + (e * y) + c).x % 2 for x,f,e,y,c in zip(X,F,E,Y,C)]
             self.multListResults.append(res)
