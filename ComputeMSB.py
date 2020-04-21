@@ -10,16 +10,15 @@ import time
 from ComposeNet import ComposeNet
 from BigMat import BigMat
 ##################################################### Globals ########################################################
+whoami = 0
 L = 64
 p = 67
-seed = random.randint(0,100)
+seed = 123
 file1 = "shares0.txt"
 file2 = "shares1.txt"
 cnet_0 = ComposeNet(L)
 cnet_1 = ComposeNet(L)
-p0address = '127.0.0.1'
-p1address = '127.0.0.1'
-p2address = '127.0.0.1'
+
 lock = threading.Lock()
 bytessent = 0
 bytes_list = []
@@ -27,6 +26,15 @@ times_list = []
 subRoutineTimer1 = 0
 subRoutineByteCounter1 = 0
 
+p0address = '68.183.27.13'
+p1address = '128.199.167.28'
+p2address = '178.128.44.8'
+if(whoami == 0):
+    p0address = '0.0.0.0'
+elif(whoami == 1):
+    p1address = '0.0.0.0'
+else:
+    p2address = '0.0.0.0'
 
 communication_On = True
 
@@ -1172,9 +1180,14 @@ class Party:
 
 ####################################################### Tests ########################################################
 
-parties = []
-p0 = Party(0); p1 = Party(1); p2 = Party(2)
-parties.append(p0); parties.append(p1)
+
+if(whoami == 0):
+    party = Party(0)
+elif(whoami == 1):
+    party = Party(1)
+else:
+    party = Party(2)
+
 time.sleep(1)
 
 def test_MyType():
@@ -1288,6 +1301,23 @@ def test_bitDecompOptTruth():
             print("p0 value:",p0.shares[i].x)
             print("p1 value:",p1.shares[i].x)
     print(f"Errors: {errors}/{len(p0.shares)}")
+    print("#########################################################")
+    print("TIME TAKEN",end - start)
+    print("bytes sent:",bytessent)
+    print("")
+
+def test_bitDecompOptDist():
+    generateBeaverTriplets(100)
+    generateMatBeaverTriplets(100)
+    start = time.time()
+    for c in range(len(party.shares)):
+        party.bitDecompOpt(c)
+    end = time.time()
+    
+
+    print("##########################################################")
+    print("BITDECOMP TEST FOR TRUTH")
+    print(party.bitDecompOptResults)
     print("#########################################################")
     print("TIME TAKEN",end - start)
     print("bytes sent:",bytessent)
@@ -1717,7 +1747,7 @@ def print_total_data():
 # test_reconstruct2PC()
 # test_MyType()
 # test_connection()
-test_bitDecompOptTruth()
+# test_bitDecompOptTruth()
 # test_bitDecompOpt_time()
 # test_mult2()
 
@@ -1729,3 +1759,4 @@ test_bitDecompOptTruth()
 
 #print_total_data()
 
+test_bitDecompOptDist()
