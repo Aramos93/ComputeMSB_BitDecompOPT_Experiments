@@ -647,8 +647,8 @@ class Party:
                 A[i] = a; B[i] = b; C[i] = c
              
         
-            E_0_list = [((x - a) % L).matrix for x,a in zip(X,A)]
-            F_0_list = [((y - b) % L).matrix for y,b in zip(Y,B)]
+            E_0_list = [((x - a) % 2).matrix for x,a in zip(X,A)]
+            F_0_list = [((y - b) % 2).matrix for y,b in zip(Y,B)]
             toSend = [E_0_list, F_0_list]
             print("sending ","E_0,F_0"+id)
             self.sendShares("p1", toSend,"E_0,F_0"+id)
@@ -658,10 +658,10 @@ class Party:
             E_1_list = [BigMat(e) for e in E_1]
             F_1_list = [BigMat(f) for f in F_1]
             
-            E = [((BigMat(e0) + e1) % L) for e0,e1 in zip(E_0_list,E_1_list)]
-            F = [((BigMat(f0) + f1) % L) for f0,f1 in zip(F_0_list,F_1_list)]
+            E = [((BigMat(e0) + e1) % 2) for e0,e1 in zip(E_0_list,E_1_list)]
+            F = [((BigMat(f0) + f1) % 2) for f0,f1 in zip(F_0_list,F_1_list)]
 
-            res = [(((x @ f) + (e @ y) + c) % L) for x,f,e,y,c in zip(X,F,E,Y,C)]
+            res = [(((x @ f) + (e @ y) + c) % 2) for x,f,e,y,c in zip(X,F,E,Y,C)]
             self.matMultListResults = res
             return res
             
@@ -671,8 +671,8 @@ class Party:
             for i in range(length):
                 a,b,c = self.matTriplets.pop(0)
                 A[i] = a; B[i] = b; C[i] = c
-            E_1_list = [((x - a) % L).matrix for x,a in zip(X,A)]
-            F_1_list = [((y - b) % L).matrix for y,b in zip(Y,B)]
+            E_1_list = [((x - a) % 2).matrix for x,a in zip(X,A)]
+            F_1_list = [((y - b) % 2).matrix for y,b in zip(Y,B)]
             toSend = [E_1_list, F_1_list]
             print("sending ","E_1,F_1"+id)
             self.sendShares("p0", toSend,"E_1,F_1"+id)
@@ -683,8 +683,8 @@ class Party:
             F_0_list = [BigMat(f) for f in F_0]
             
             
-            E = [((e0 + BigMat(e1)) % L) for e0,e1 in zip(E_0_list,E_1_list)]
-            F = [((f0 + BigMat(f1)) % L) for f0,f1 in zip(F_0_list,F_1_list)]
+            E = [((e0 + BigMat(e1)) % 2) for e0,e1 in zip(E_0_list,E_1_list)]
+            F = [((f0 + BigMat(f1)) % 2) for f0,f1 in zip(F_0_list,F_1_list)]
 
             res = [((((e @ f)*-1) + (x @ f) + (e @ y) + c) % 2) for x,f,e,y,c in zip(X,F,E,Y,C)]
             self.matMultListResults = res
