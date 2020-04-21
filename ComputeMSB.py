@@ -366,16 +366,16 @@ class Party:
 
     def recvShares(self,recvParty,mark = "empty", length=0):
         while True:
-            #print("looking for",mark,"in buffer")
-            #print("in buffer:",self.listenBuffer.keys())
-            #print("seen so far: ",self.seenlist)
+            print("looking for",mark,"in buffer")
+            print("in buffer:",self.listenBuffer.keys())
+            print("seen so far: ",self.seenlist)
             if(mark in self.listenBuffer):
                 data = self.listenBuffer.pop(mark)
-                #print("taking",mark,"out of the buffer")
+                print("taking",mark,"out of the buffer")
                 
                 return(repr(data))
             else:
-                time.sleep(0.00000001)
+                time.sleep(0.0000001)
                 continue
 
             
