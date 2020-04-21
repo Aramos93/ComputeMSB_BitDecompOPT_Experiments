@@ -220,7 +220,7 @@ class Party:
                 data += more
 
             #print(data)
-            print("length of data ",len(data))
+            #print("length of data ",len(data))
             if(len(data) > 1600):
                 if(data.count(b'\xbee') > 1): 
                     arr = data.split(b'\xbee.')
@@ -234,7 +234,7 @@ class Party:
                     print("first one",data_arr0)
                     print("second one",data_arr1)
                     return
-            print(data) 
+            #print(data) 
             data_arr = pickle.loads(data)
             self.listenBuffer[data_arr[1]] = data_arr[0]
             self.seenlist.append(data_arr[1])
@@ -383,8 +383,8 @@ class Party:
     def send(self, sendTo, value):
         global bytessent
         bytessent =  bytessent + len(value)
-        print("sending the following:")
-        print(value)
+        #print("sending the following:")
+        #print(value)
         if(self.party == "p0"):
             if(sendTo == "p1"):
                 self.socket01send.send(value)
@@ -1313,8 +1313,8 @@ def test_bitDecompOptTruth():
     print("")
 
 def test_bitDecompOptDist():
-    generateBeaverTriplets(1000)
-    generateMatBeaverTriplets(1000)
+    generateBeaverTriplets(10000)
+    generateMatBeaverTriplets(10000)
     start = time.time()
     for c in range(len(party.shares)):
         party.bitDecompOpt(party.shares[c])
