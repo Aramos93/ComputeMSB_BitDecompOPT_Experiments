@@ -215,6 +215,10 @@ class Party:
         listenSocket, _ = listenSocket.accept()
         while communication_On:
             data = listenSocket.recv(4096)
+            while(chr(data[-1]) != '.'):
+                more = listenSocket.recv(4096)
+                data += more
+
             #print(data)
             print("length of data ",len(data))
             if(len(data) > 1600):
