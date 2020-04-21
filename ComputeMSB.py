@@ -65,9 +65,10 @@ def generateBeaverTriplets(N):
         a_0, a_1 = generateMyTypeShares(a)
         b_0, b_1 = generateMyTypeShares(b)
         c_0, c_1 = generateMyTypeShares(c)
-    
-        p0.triplets.append([a_0.x, b_0.x, c_0.x])
-        p1.triplets.append([a_1.x, b_1.x, c_1.x])
+        if(whoami == 0):
+            party.triplets.append([a_0.x, b_0.x, c_0.x])
+        else:
+            party.triplets.append([a_1.x, b_1.x, c_1.x])
 
 def generateMatBeaverTriplets(N):
     for _ in range(N):
@@ -87,9 +88,13 @@ def generateMatBeaverTriplets(N):
         A_0, A_1 = generateMatrixShares(A)
         B_0, B_1 = generateMatrixShares(B)
         C_0, C_1 = generateMatrixShares(C)
-    
-        p0.matTriplets.append([A_0, B_0, C_0])
-        p1.matTriplets.append([A_1, B_1, C_1])
+
+        if(whoami == 0):
+            party.matTriplets.append([A_0, B_0, C_0])
+        else:
+            party.matTriplets.append([A_1, B_1, C_1])
+
+        
 
 
 ######################################################################################################################
@@ -136,7 +141,7 @@ class Party:
         if(partyName == 0):
             self.socket01send = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
             self.socket01send.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            self.socket01send.'0.0.0.0's,self.lookup.get('p0_send_to_p1')))
+            self.socket01send.bind(('0.0.0.0',self.lookup.get('p0_send_to_p1')))
             self.socket01recv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.socket01recv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             self.socket01recv.bind(('0.0.0.0',self.lookup.get('p0_recv_from_p1')))
