@@ -214,13 +214,9 @@ class Party:
         listenSocket.listen()
         listenSocket, _ = listenSocket.accept()
         while communication_On:
-            data = b''
-            while True:
-                packet = listenSocket.recv(4096)
-                if not packet: break
-                data += packet
+            data = listenSocket.recv(4096)
             #print(data)
-            #print("length of data ",len(data))
+            print("length of data ",len(data))
             if(len(data) > 1600):
                 if(data.count(b'\xbee') > 1): 
                     arr = data.split(b'\xbee.')
