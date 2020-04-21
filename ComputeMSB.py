@@ -1,6 +1,7 @@
 import random
 import socket
 import sys
+import signal
 import pickle
 import time 
 from ast import literal_eval
@@ -8,7 +9,6 @@ import threading
 import time
 from ComposeNet import ComposeNet
 from BigMat import BigMat
-
 ##################################################### Globals ########################################################
 L = 64
 p = 67
@@ -22,6 +22,7 @@ p0address = '127.0.0.1'
 p1address = '127.0.0.1'
 p2address = '127.0.0.1'
 
+communication_On = True
 
 
 
@@ -29,6 +30,8 @@ p2address = '127.0.0.1'
 
 
 ##################################################### Utilities ######################################################
+
+
 
 def generateMatrixShares(M):
     M_0 = BigMat([[random.randint(0, (2**L)-1), random.randint(0, (2**L)-1)],[random.randint(0, (2**L)-1), random.randint(0, (2**L)-1)]])
@@ -109,53 +112,65 @@ class Party:
         # Connection Initialization
         
 
-        self.lookup = {  "p0_send_to_p1":2011,
-                    "p0_send_to_p2":2021,
-                    "p1_send_to_p0":2101,
-                    "p1_send_to_p2":2121,
-                    "p2_send_to_p0":2201,
-                    "p2_send_to_p1":2211,
-                    "p0_recv_from_p1":2010,
-                    "p0_recv_from_p2":2020,
-                    "p1_recv_from_p0":2100,
-                    "p1_recv_from_p2":2120,
-                    "p2_recv_from_p0":2200,
-                    "p2_recv_from_p1":2210
+        self.lookup = {  "p0_send_to_p1":20110,
+                    "p0_send_to_p2":20210,
+                    "p1_send_to_p0":21010,
+                    "p1_send_to_p2":21210,
+                    "p2_send_to_p0":22010,
+                    "p2_send_to_p1":22110,
+                    "p0_recv_from_p1":20100,
+                    "p0_recv_from_p2":20200,
+                    "p1_recv_from_p0":21000,
+                    "p1_recv_from_p2":21200,
+                    "p2_recv_from_p0":22000,
+                    "p2_recv_from_p1":22100
                 }
         if(partyName == 0):
             self.socket01send = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
+            self.socket01send.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             self.socket01send.bind((p1address,self.lookup.get('p0_send_to_p1')))
             self.socket01recv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.socket01recv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             self.socket01recv.bind((p0address,self.lookup.get('p0_recv_from_p1')))
             self.socket02send = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.socket02send.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             self.socket02send.bind((p2address,self.lookup.get('p0_send_to_p2')))
             self.socket02recv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.socket02recv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             self.socket02recv.bind((p0address,self.lookup.get('p0_recv_from_p2')))
 
         elif(partyName == 1):
             self.socket10send = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.socket10send.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             self.socket10send.bind((p0address,self.lookup.get('p1_send_to_p0')))
             self.socket10recv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.socket10recv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             self.socket10recv.bind((p1address,self.lookup.get('p1_recv_from_p0')))
             self.socket12send = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.socket12send.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             self.socket12send.bind((p2address,self.lookup.get('p1_send_to_p2')))
             self.socket12recv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.socket12recv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             self.socket12recv.bind((p1address,self.lookup.get('p1_recv_from_p2')))
 
         elif(partyName == 2):
             self.socket20send = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.socket20send.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             self.socket20send.bind((p0address,self.lookup.get('p2_send_to_p0')))
             self.socket20recv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.socket20recv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             self.socket20recv.bind((p2address,self.lookup.get('p2_recv_from_p0')))
             self.socket21send = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.socket21send.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             self.socket21send.bind((p1address,self.lookup.get('p2_send_to_p1')))
             self.socket21recv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.socket21recv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             self.socket21recv.bind((p2address,self.lookup.get('p2_recv_from_p1')))
         
         self.listenBuffer = {}
+        self.seenlist = []
         
         
-
 
         # Party shares initialization
         if partyName > 2 or partyName < 0:
@@ -177,6 +192,7 @@ class Party:
             self.readFile(file1)
         elif partyName == 1:
             self.readFile(file2)
+        
         self.setupCommunication()
 
 
@@ -185,13 +201,37 @@ class Party:
     def listen(self, listenSocket):
         listenSocket.listen()
         listenSocket, _ = listenSocket.accept()
-        while True:
-            data = listenSocket.recv(4096)
+        while communication_On:
+            data = listenSocket.recv(3000)
+            #print(data)
+            #print("length of data ",len(data))
+            if(len(data) > 1600):
+                if(data.count(b'\xbee') > 1): 
+                    arr = data.split(b'\xbee.')
+                    data_arr0 = pickle.loads(arr[0]+b'\xbee.')
+                    data_arr1 = pickle.loads(arr[1]+b'\xbee.')
+                    self.listenBuffer[data_arr0[1]] = data_arr0[0]
+                    self.seenlist.append(data_arr0[1])
+                    self.listenBuffer[data_arr1[1]] = data_arr1[0]
+                    self.seenlist.append(data_arr1[1])
+                    #print("this is crazy")
+                    #print("first one",data_arr0)
+                    #print("second one",data_arr1)
+                    return 
             data_arr = pickle.loads(data)
             self.listenBuffer[data_arr[1]] = data_arr[0]
+            self.seenlist.append(data_arr[1])
+            #print("receieved and added ",data_arr[1])
+            #print("rest of the buffer", self.listenBuffer)
+        
+        #print("yo im dying")
+        listenSocket.shutdown(socket.SHUT_RDWR)
+        return
+        
 
     #Function to actively connect to a listening socket.
     def connect(self, sendSocket, targetAddress, target, source):
+        time.sleep(1)
         while True:
             try:
                 if(source == 0):
@@ -211,12 +251,13 @@ class Party:
                         sendSocket.connect((targetAddress,self.lookup.get("p0_recv_from_p2")))
                     elif(target == 1):
                         sendSocket.connect((targetAddress,self.lookup.get("p1_recv_from_p2")))
-
                 return
             except Exception as e:
-                print(str(e))
+                print(str(e),"source:",source,"target:",target)
                 continue
     
+    
+
     #Connects each socket with each other with connects/listens
     def setupCommunication(self):
         if(self.partyName == 0):
@@ -224,11 +265,15 @@ class Party:
             thread3 = threading.Thread(target=self.listen,kwargs=dict(listenSocket=self.socket01recv))
             thread3.daemon = True            
             thread3.start()
+            print("listen01")
+            
 
             thread4 = threading.Thread(target=self.listen,kwargs=dict(listenSocket=self.socket02recv))
-            thread4.daemon = True            
+            thread4.daemon = True              
             thread4.start()
-            time.sleep(1)
+            print("listen02")
+            
+
             thread1 = threading.Thread(target=self.connect,kwargs=dict(sendSocket=self.socket01send,targetAddress=p1address,target=1,source=0))
             thread1.daemon = True
             thread1.start()
@@ -242,13 +287,15 @@ class Party:
         if(self.partyName == 1):
 
             thread3 = threading.Thread(target=self.listen,kwargs=dict(listenSocket=self.socket10recv))
-            thread3.daemon = True            
+            thread3.daemon = True  
+            print("listen10")            
             thread3.start()
 
             thread4 = threading.Thread(target=self.listen,kwargs=dict(listenSocket=self.socket12recv))
-            thread4.daemon = True            
+            thread4.daemon = True  
+            print("listen12")            
             thread4.start()
-            time.sleep(1)
+
             thread1 = threading.Thread(target=self.connect,kwargs=dict(sendSocket=self.socket10send,targetAddress=p0address,target=0,source=1))
             thread1.daemon = True
             thread1.start()
@@ -262,14 +309,15 @@ class Party:
         if(self.partyName == 2):
 
             thread3 = threading.Thread(target=self.listen,kwargs=dict(listenSocket=self.socket20recv))
-            thread3.daemon = True            
+            thread3.daemon = True
+            print("listen20")              
             thread3.start()
 
             thread4 = threading.Thread(target=self.listen,kwargs=dict(listenSocket=self.socket21recv))
-            thread4.daemon = True            
+            thread4.daemon = True
+            print("listen21")              
             thread4.start()
 
-            time.sleep(1)
             thread1 = threading.Thread(target=self.connect,kwargs=dict(sendSocket=self.socket20send,targetAddress=p0address,target=0,source=2))
             thread1.daemon = True
             thread1.start()
@@ -278,8 +326,6 @@ class Party:
             thread2.daemon = True
             thread2.start()
 
-            
-        
     # Get actual values of shares from MyType's
     def getShareVals(self):
         return [e.x for e in self.shares]
@@ -303,36 +349,57 @@ class Party:
 
     def recvShares(self,recvParty,mark = "empty", length=0):
         while True:
+            #print("looking for",mark,"in buffer")
+            #print("in buffer:",self.listenBuffer.keys())
+            #print("seen so far: ",self.seenlist)
             if(mark in self.listenBuffer):
                 data = self.listenBuffer.pop(mark)
+                #print("taking",mark,"out of the buffer")
+                
                 return(repr(data))
             else:
-                time.sleep(0.0000001)
+                time.sleep(0.00001)
                 continue
 
             
 
     def send(self, sendTo, value):
+        time.sleep(0.05)
         global bytessent
         bytessent =  bytessent + len(value)
         if(self.party == "p0"):
             if(sendTo == "p1"):
-                self.socket01send.send(value)
+                self.socket01send.sendall(value)
             elif(sendTo == "p2"):
-                self.socket02send.send(value)
+                self.socket02send.sendall(value)
 
         elif(self.party == "p1"):
             if(sendTo == "p2"):
-                self.socket12send.send(value)
+                self.socket12send.sendall(value)
             elif(sendTo == "p0"):
-                self.socket10send.send(value)
+                self.socket10send.sendall(value)
 
         elif(self.party == "p2"):
             if(sendTo == "p0"):
-                self.socket20send.send(value)
+                self.socket20send.sendall(value)
             elif(sendTo == "p1"):
-                self.socket21send.send(value)
+                self.socket21send.sendall(value)
 
+    def closeCommunication(self):
+        global communication_On
+        communication_On = False
+        if(self.partyName == 0):
+            self.socket01send.shutdown(socket.SHUT_RDWR)
+            self.socket02send.shutdown(socket.SHUT_RDWR)
+            
+        elif(self.partyName == 1):
+            self.socket12send.shutdown(socket.SHUT_RDWR)
+            self.socket10send.shutdown(socket.SHUT_RDWR)
+            
+        else:
+            self.socket20send.shutdown(socket.SHUT_RDWR)
+            self.socket21send.shutdown(socket.SHUT_RDWR)
+            
 
     ############ Send and Receive single int ####################
     def sendInt(self,target,value,mark="empty"):
@@ -348,7 +415,7 @@ class Party:
                 data = self.listenBuffer.pop(mark)
                 return(int(data))
             else:
-                time.sleep(0.000000001)
+                #time.sleep(0.0001)
                 continue
                 
            
@@ -533,7 +600,7 @@ class Party:
             return res
 
     
-    def matMultList(self, X, Y, id=0):
+    def matMultList(self, X, Y, id="0"):
         length = len(X)
         if self.party == "p0":
             A = [None]*length; B = [None]*length; C = [None]*length; 
@@ -545,10 +612,11 @@ class Party:
             E_0_list = [((x - a) % L).matrix for x,a in zip(X,A)]
             F_0_list = [((y - b) % L).matrix for y,b in zip(Y,B)]
             toSend = [E_0_list, F_0_list]
-            self.sendShares("p1", toSend,"E_0,F_0"+str(id))
+            print("sending ","E_0,F_0"+id)
+            self.sendShares("p1", toSend,"E_0,F_0"+id)
             
-            E_1, F_1 = literal_eval(self.recvShares("p0","E_1,F_1"+str(id)))
-            
+            E_1, F_1 = literal_eval(self.recvShares("p0","E_1,F_1"+id))
+            print("received ","E_1,F_1"+id)
             E_1_list = [BigMat(e) for e in E_1]
             F_1_list = [BigMat(f) for f in F_1]
             
@@ -568,10 +636,11 @@ class Party:
             E_1_list = [((x - a) % L).matrix for x,a in zip(X,A)]
             F_1_list = [((y - b) % L).matrix for y,b in zip(Y,B)]
             toSend = [E_1_list, F_1_list]
-            self.sendShares("p0", toSend,"E_1,F_1"+str(id))
+            print("sending ","E_0,F_0"+id)
+            self.sendShares("p0", toSend,"E_1,F_1"+id)
             
-            E_0, F_0 = literal_eval(self.recvShares("p1","E_0,F_0"+str(id)))
-            
+            E_0, F_0 = literal_eval(self.recvShares("p1","E_0,F_0"+id))
+            print("received ","E_0,F_0"+id)
             E_0_list = [BigMat(e) for e in E_0]
             F_0_list = [BigMat(f) for f in F_0]
             
@@ -673,7 +742,7 @@ class Party:
             return res
 
 
-    def multList(self, X, Y):
+    def multList(self, X, Y, ident = 0):
         length = len(X)
         if self.party == "p0":
             A = [None]*length; B = [None]*length; C = [None]*length; 
@@ -688,8 +757,8 @@ class Party:
             
             toSend = [E_0_list, F_0_list]
             
-            self.sendShares("p1", toSend)
-            E_1_list, F_1_list = literal_eval(self.recvShares("p0"))
+            self.sendShares("p1", toSend,"g0"+str(ident))
+            E_1_list, F_1_list = literal_eval(self.recvShares("p0","g1"+str(ident)))
             
             E = [MyType(e0+e1).x for e0,e1 in zip(E_0_list,E_1_list)]
             F = [MyType(f0+f1).x for f0,f1 in zip(F_0_list,F_1_list)]
@@ -706,8 +775,8 @@ class Party:
             E_1_list = [MyType(x - a).x for x,a in zip(X,A)]
             F_1_list = [MyType(y - b).x for y,b in zip(Y,B)]
             toSend = [E_1_list, F_1_list]
-            self.sendShares("p0", toSend)
-            E_0_list, F_0_list = literal_eval(self.recvShares("p1"))
+            self.sendShares("p0", toSend,"g1"+str(ident))
+            E_0_list, F_0_list = literal_eval(self.recvShares("p1","g0"+str(ident)))
                
             E = [MyType(e0+e1).x for e0,e1 in zip(E_0_list,E_1_list)]
             F = [MyType(f0+f1).x for f0,f1 in zip(F_0_list,F_1_list)]
@@ -980,7 +1049,7 @@ class Party:
             p0list = [int(a) for a in p0]
             b0list = [int(a) for a in b0]
 
-            g0 = self.multList(p0list,b0list)
+            g0 = self.multList(p0list,b0list,1)
             g0 = [a % 2 for a in g0]  
 
             #print("g0",g0)
@@ -997,7 +1066,7 @@ class Party:
                 for cnnode in cnet_0.layers[i]:
                     leftlist.append(cnnode.left.matrix)
                     rightlist.append(cnnode.right.matrix)
-                result = self.matMultList(rightlist,leftlist,i)
+                result = self.matMultList(rightlist,leftlist,str(i))
                 result = [(c % 2) for c in result]
                 #print(result)
                 for cnode, res in zip(cnet_0.layers[i],result):
@@ -1030,7 +1099,7 @@ class Party:
             p1list = [int(a) for a in p1]
             b1list = [int(a) for a in b1]
 
-            g1 = self.multList(b1list,p1list)
+            g1 = self.multList(b1list,p1list,1)
            
             g1 = [a % 2 for a in g1]
         
@@ -1048,7 +1117,7 @@ class Party:
                 for cnnode in cnet_1.layers[i]:
                     leftlist.append(cnnode.left.matrix)
                     rightlist.append(cnnode.right.matrix)
-                result = self.matMultList(rightlist,leftlist,i)
+                result = self.matMultList(rightlist,leftlist,str(i))
                 result = [c % 2 for c in result]
                 for cnode, res in zip(cnet_1.layers[i],result):
                     cnode.matrix = res
@@ -1171,11 +1240,11 @@ def test_bitDecompOptTruth():
         threads = [None]*2
         for i, p in enumerate(parties):
             threads[i] = threading.Thread(target=p.bitDecompOpt, args=(p.shares[c],))
+            
             threads[i].start()
         
         for p,t in zip(parties, threads):
             t.join(10)
-
     end = time.time()
     
 
@@ -1590,3 +1659,9 @@ def test_connection():
 test_bitDecompOptTruth()
 # test_bitDecompOpt_time()
 # test_mult2()
+
+
+###TO close communication
+#p0.closeCommunication()
+#p1.closeCommunication()
+#p2.closeCommunication()
