@@ -913,12 +913,10 @@ class Party:
         beta = MyType(1,is_zl=False)       
 
         if self.party == "p0":
-            print("receiving x_0")
-            x_0 = MyType(self.recvInt("p0","x_0"), is_zl=False)   
-            print("receiving x_bit_arr_0")
-            x_bit_arr_0 = literal_eval(self.recvShares("p0","x_bit_arr_0"))
-            print("receiving x_firstBit_0")
-            x_firstBit_0 = self.recvInt("p0","x_firstBit_0")
+            p0bundle = literal_eval(self.recvShares("p0","bundle0"))
+            x_0 = MyType(p0bundle[0], is_zl=False) 
+            x_bit_arr_0 = p0bundle[1]
+            x_firstBit_0 = p0bundle[2]
             
             y_0 = MyType(2*a.x, is_zl=False) 
             r_0 = MyType(y_0.x + x_0.x, is_zl=False)  
@@ -954,12 +952,10 @@ class Party:
             return alpha_0
 
         if self.party == "p1":     
-            print("receiving x_1") 
-            x_1 = MyType(self.recvInt("p1","x_1"), is_zl=False) 
-            print("receiving x_bit_arr_1") 
-            x_bit_arr_1 = literal_eval(self.recvShares("p1","x_bit_arr_1"))
-            print("receiving _firstBit_1") 
-            x_firstBit_1 = self.recvInt("p1","x_firstBit_1")
+            p1bundle = literal_eval(self.recvShares("p1","bundle1"))
+            x_1 = MyType(p1bundle[0], is_zl=False) 
+            x_bit_arr_1 = p1bundle[1]
+            x_firstBit_1 = p1bundle[2]
             #x_firstBit_1 = 0
             #print(f"p1 received: x_1 {x_1.x}, x_bit_arr_1 {x_bit_arr_1}, xfirstbit {x_firstBit_1}")
             y_1 = MyType(2*a.x, is_zl=False)    
@@ -1010,14 +1006,11 @@ class Party:
             # print("bin_x: ", bin_x)
             # print(f"x_bit_arr_0: {x_bit_arr_0}, x_bit_arr_1: {x_bit_arr_1}")
             # print(f"x_first_0: {x_firstBit_0.x}, x_first_1: {x_firstBit_1.x}")
-            print("sending x")
-            self.sendInt("p0", x_0.x,"x_0"); self.sendInt("p1", x_1.x,"x_1")
-            #time.sleep(0.1)
-            print("sending x_bit_arr")
-            self.sendShares("p0", x_bit_arr_0,"x_bit_arr_0"); self.sendShares("p1", x_bit_arr_1, "x_bit_arr_1")
-            #time.sleep(0.1)
-            print("sending x_firstbit")
-            self.sendInt("p0", x_firstBit_0.x,"x_firstBit_0"); self.sendInt("p1", x_firstBit_1.x,"x_firstBit_1")
+            print("sending bundle")
+            toSend0 = [x_0.x, x_bit_arr_0, x_firstBit_0.x]
+            toSend1 = [x_1.x, x_bit_arr_1, x_firstBit_1.x]
+            self.sendShares("p0",toSend0,"bundle0");self.sendShares("p1",toSend1,"bundle1")
+            
             #time.sleep(0.1)
             #r = MyType(self.recvInt("p2"), is_zl=False)
             #print("p2 r: ", r.x)
