@@ -1196,7 +1196,7 @@ elif(whoami == 1):
 else:
     party = Party(2)
 
-time.sleep(1)
+time.sleep(5)
 
 def test_MyType():
     testListInput = [8,20,16,0,-3]
