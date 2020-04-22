@@ -275,6 +275,7 @@ class Party:
                 return
             except Exception as e:
                 print(str(e),"source:",source,"target:",target)
+                time.sleep(0.5)
                 continue
     
     
@@ -292,7 +293,7 @@ class Party:
             thread4.daemon = True              
             thread4.start()
             
-
+            time.sleep(1)
 
             thread1 = threading.Thread(target=self.connect,kwargs=dict(sendSocket=self.socket01send,targetAddress=p1address,target=1,source=0))
             thread1.daemon = True
@@ -316,6 +317,8 @@ class Party:
             print("listen12")            
             thread4.start()
 
+            time.sleep(1)
+
             thread1 = threading.Thread(target=self.connect,kwargs=dict(sendSocket=self.socket10send,targetAddress=p0address,target=0,source=1))
             thread1.daemon = True
             thread1.start()
@@ -338,6 +341,8 @@ class Party:
             print("listen21")              
             thread4.start()
 
+
+            time.sleep(1)
 
             thread1 = threading.Thread(target=self.connect,kwargs=dict(sendSocket=self.socket20send,targetAddress=p0address,target=0,source=2))
             thread1.daemon = True
