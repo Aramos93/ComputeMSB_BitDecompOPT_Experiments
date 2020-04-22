@@ -239,16 +239,16 @@ class Party:
             #         print("second one",data_arr1)
             #         return
             #print(data) 
-            if(data.count(b'.') > 1):
-                print("this data yo has more than 1 dot\n",data)
-                arr = data.split(b'.')
-                for d in arr[:-1]:
-                    data_arr = pickle.loads(d+b'.')
-                    print("loaded up it is:\n",data_arr)
-                    #print(data_arr)
-                    self.listenBuffer[data_arr[1]] = data_arr[0]
-                    self.seenlist.append(data_arr[1])
-            else:
+            # if(data.count(b'.') > 1):
+            #     print("this data yo has more than 1 dot\n",data)
+            #     arr = data.split(b'.')
+            #     for d in arr[:-1]:
+            #         data_arr = pickle.loads(d+b'.')
+            #         print("loaded up it is:\n",data_arr)
+            #         #print(data_arr)
+            #         self.listenBuffer[data_arr[1]] = data_arr[0]
+            #         self.seenlist.append(data_arr[1])
+            # else:
                 data_arr = pickle.loads(data)
                 print("loaded up it is:\n",data_arr)
                 #print(data_arr)
