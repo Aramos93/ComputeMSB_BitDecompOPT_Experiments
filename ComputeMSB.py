@@ -249,13 +249,13 @@ class Party:
             #         self.listenBuffer[data_arr[1]] = data_arr[0]
             #         self.seenlist.append(data_arr[1])
             # else:
-                data_arr = pickle.loads(data)
-                print("loaded up it is:\n",data_arr)
-                #print(data_arr)
-                self.listenBuffer[data_arr[1]] = data_arr[0]
-                self.seenlist.append(data_arr[1])
-                #print("receieved and added ",data_arr[1])
-                #print("rest of the buffer", self.listenBuffer)
+            data_arr = pickle.loads(data)
+            print("loaded up it is:\n",data_arr)
+            #print(data_arr)
+            self.listenBuffer[data_arr[1]] = data_arr[0]
+            self.seenlist.append(data_arr[1])
+            #print("receieved and added ",data_arr[1])
+            #print("rest of the buffer", self.listenBuffer)
         
         #print("yo im dying")
         listenSocket.shutdown(socket.SHUT_RDWR)
