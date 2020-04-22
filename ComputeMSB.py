@@ -239,13 +239,22 @@ class Party:
             #         print("second one",data_arr1)
             #         return
             #print(data) 
-            data_arr = pickle.loads(data)
-            print("loaded up it is:\n",data_arr)
-            #print(data_arr)
-            self.listenBuffer[data_arr[1]] = data_arr[0]
-            self.seenlist.append(data_arr[1])
-            #print("receieved and added ",data_arr[1])
-            #print("rest of the buffer", self.listenBuffer)
+            if(data.count(b'.' > 1)):
+                arr = data.split(b'.')
+                for d in arr[:-1]:
+                    data_arr = pickle.loads(d+b'.')
+                    print("loaded up it is:\n",data_arr)
+                    #print(data_arr)
+                    self.listenBuffer[data_arr[1]] = data_arr[0]
+                    self.seenlist.append(data_arr[1])
+            else:
+                data_arr = pickle.loads(data)
+                print("loaded up it is:\n",data_arr)
+                #print(data_arr)
+                self.listenBuffer[data_arr[1]] = data_arr[0]
+                self.seenlist.append(data_arr[1])
+                #print("receieved and added ",data_arr[1])
+                #print("rest of the buffer", self.listenBuffer)
         
         #print("yo im dying")
         listenSocket.shutdown(socket.SHUT_RDWR)
