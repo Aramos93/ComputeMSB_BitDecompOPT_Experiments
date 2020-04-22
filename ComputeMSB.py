@@ -904,27 +904,29 @@ class Party:
         beta = MyType(1,is_zl=False)       
 
         if self.party == "p0":
+            print("receiving x_0")
             x_0 = MyType(self.recvInt("p0","x_0"), is_zl=False)   
+            print("receiving x_bit_arr_0")
             x_bit_arr_0 = literal_eval(self.recvShares("p0","x_bit_arr_0"))
+            print("receiving x_firstBit_0")
             x_firstBit_0 = self.recvInt("p0","x_firstBit_0")
-            #x_firstBit_0 = 0
-            #print(f"p0 received: x_0 {x_0.x}, x_bit_arr_0 {x_bit_arr_0}, xfirstbit {x_firstBit_0}")
+            
             y_0 = MyType(2*a.x, is_zl=False) 
             r_0 = MyType(y_0.x + x_0.x, is_zl=False)  
             r_1 = MyType(self.recvInt("p0","r_1"), is_zl=False)   
             self.sendInt("p1", r_0.x,"r_0")
             #time.sleep(0.1)             
             r = MyType(r_0.x + r_1.x, is_zl=False)
-
+            print("Making private compare")
             self.privateCompare(x_bit_arr_0, r, beta)
-
+            print("done with private compare")
             # print("p0 a: ", a.x)
             # print("p0 x_0: ", x_0.x)
             # print("p0 y_0: ", y_0.x)
             # print("p0 r_0: ", r_0.x)
             # print("p0 r_1: ", r_1.x)
             # print("p0 r: ", r.x)
-
+            print("receiving beta_prime_0")
             beta_prime_0 = MyType(self.recvInt("p0","beta_prime_0"))
             #beta_prime_0 = MyType(2)
             #print("p0 b':",beta_prime_0.x)
@@ -933,16 +935,21 @@ class Party:
             delta_0 = MyType(x_firstBit_0 + self.partyName * int(bin(r.x)[-1]) - 2 * int(bin(r.x)[-1]) * x_firstBit_0)
             #print("p0 delta0: ",delta_0.x)
             #print(f"p0 mult: {gamma_0.x}, {delta_0.x}")
-
+            
+            print("multing now")
             theta_0 = self.mult(gamma_0, delta_0)
+            print("done multing")
             #print("p0 multres: ", theta_0.x)
             alpha_0 = MyType(gamma_0.x + delta_0.x - 2 * theta_0.x)
             self.msbResults.append(alpha_0)
             return alpha_0
 
-        if self.party == "p1":      
+        if self.party == "p1":     
+            print("receiving x_1") 
             x_1 = MyType(self.recvInt("p1","x_1"), is_zl=False) 
+            print("receiving x_bit_arr_1") 
             x_bit_arr_1 = literal_eval(self.recvShares("p1","x_bit_arr_1"))
+            print("receiving _firstBit_1") 
             x_firstBit_1 = self.recvInt("p1","x_firstBit_1")
             #x_firstBit_1 = 0
             #print(f"p1 received: x_1 {x_1.x}, x_bit_arr_1 {x_bit_arr_1}, xfirstbit {x_firstBit_1}")
@@ -952,8 +959,9 @@ class Party:
             #time.sleep(0.1)
             r_0 = MyType(self.recvInt("p1","r_0"), is_zl=False)     
             r = MyType(r_0.x + r_1.x, is_zl=False)
-
+            print("making private compare")
             self.privateCompare(x_bit_arr_1, r, beta)
+            print("done private compare")
             # print("p1 a: ", a.x)
             # print("p1 x_1: ", x_1.x)
             # print("p1 y_1: ", y_1.x)
@@ -972,8 +980,9 @@ class Party:
             delta_1 = MyType(x_firstBit_1 + self.partyName * int(bin(r.x)[-1]) - 2 * int(bin(r.x)[-1]) * x_firstBit_1)
             #print("p1 delta1: ",delta_1.x)
             #print(f"p1 mult: {gamma_1.x}, {delta_1.x}")
-
+            print("multing now")
             theta_1 = self.mult(gamma_1, delta_1)
+            print("done multing")
             #print("p1 multres: ", theta_1.x)
             alpha_1 = MyType(gamma_1.x + delta_1.x - 2 * theta_1.x)
             self.msbResults.append(alpha_1)
@@ -992,23 +1001,29 @@ class Party:
             # print("bin_x: ", bin_x)
             # print(f"x_bit_arr_0: {x_bit_arr_0}, x_bit_arr_1: {x_bit_arr_1}")
             # print(f"x_first_0: {x_firstBit_0.x}, x_first_1: {x_firstBit_1.x}")
-          
+            print("sending x")
             self.sendInt("p0", x_0.x,"x_0"); self.sendInt("p1", x_1.x,"x_1")
             #time.sleep(0.1)
+            print("sending x_bit_arr")
             self.sendShares("p0", x_bit_arr_0,"x_bit_arr_0"); self.sendShares("p1", x_bit_arr_1, "x_bit_arr_1")
             #time.sleep(0.1)
+            print("sending x_firstbit")
             self.sendInt("p0", x_firstBit_0.x,"x_firstBit_0"); self.sendInt("p1", x_firstBit_1.x,"x_firstBit_1")
             #time.sleep(0.1)
             #r = MyType(self.recvInt("p2"), is_zl=False)
             #print("p2 r: ", r.x)
-  
+            print("private comparing")
             beta_prime = self.privateCompare()
+            print("done private comparing")
+
             #print("beta': ",beta_prime)
             beta_prime_0, beta_prime_1 = generateMyTypeShares(beta_prime)
             #print(f"beta'0: {beta_prime_0.x}, beta'1: {beta_prime_1.x}")
+            print("sending beta_prime")
             self.sendInt("p0", beta_prime_0.x,"beta_prime_0"); self.sendInt("p1", beta_prime_1.x,"beta_prime_1")
+            print("multing")
             self.mult()
-
+            print("done multing")
 
     def bitDecomp(self, a=MyType(0)):
         if self.party == "p0":
