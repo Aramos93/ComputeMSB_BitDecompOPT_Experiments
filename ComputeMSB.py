@@ -1466,7 +1466,7 @@ def test_computeMSBTruth():
 
     
     print("##########################################################")
-    print(f"MSB TEST TRUTH for {len(p0.shares)} inputs")
+    print(f"MSB TEST TRUTH for {len(party.shares)} inputs")
     print("ComputeMSB time:",end - start)
     print("Bytes sent in ComputeMSB:",bytessent)
     print("#########################################################")
