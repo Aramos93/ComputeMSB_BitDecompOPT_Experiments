@@ -1320,7 +1320,7 @@ def test_bitDecompOptDist():
     for c in range(len(party.shares)):
         party.bitDecompOpt(party.shares[c])
         time.sleep(0.1)
-        print("done",c,"out of",len(party.shares))
+        print("done",c+1,"out of",len(party.shares))
     end = time.time()
     end = end - (len(party.shares)*0.1)
 
