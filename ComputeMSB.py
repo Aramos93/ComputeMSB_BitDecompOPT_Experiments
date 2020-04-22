@@ -10,7 +10,7 @@ import time
 from ComposeNet import ComposeNet
 from BigMat import BigMat
 ##################################################### Globals ########################################################
-whoami = 0
+whoami=0
 L = 64
 p = 67
 seed = 123
