@@ -1457,7 +1457,7 @@ def test_computeMSBTruth():
     bytessent = 0
 
     start = time.time()
-    for c in range(len(party.converted_shares)):
+    for c in range(len(party.shares)):
 
         if(whoami == 2):
             party.computeMSB()
