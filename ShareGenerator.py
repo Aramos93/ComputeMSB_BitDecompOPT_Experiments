@@ -4,7 +4,7 @@ import random as rand
 
 
 L = 64
-N = 5
+N = 1000
 secrets = []
 shares_0 = []
 shares_1 = []

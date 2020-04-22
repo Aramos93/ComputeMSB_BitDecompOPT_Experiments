@@ -964,9 +964,7 @@ class Party:
             #time.sleep(0.1)
             r_0 = MyType(self.recvInt("p1","r_0"), is_zl=False)     
             r = MyType(r_0.x + r_1.x, is_zl=False)
-            print("making private compare")
             self.privateCompare(x_bit_arr_1, r, beta)
-            print("done private compare")
             # print("p1 a: ", a.x)
             # print("p1 x_1: ", x_1.x)
             # print("p1 y_1: ", y_1.x)
@@ -1006,7 +1004,6 @@ class Party:
             # print("bin_x: ", bin_x)
             # print(f"x_bit_arr_0: {x_bit_arr_0}, x_bit_arr_1: {x_bit_arr_1}")
             # print(f"x_first_0: {x_firstBit_0.x}, x_first_1: {x_firstBit_1.x}")
-            print("sending bundle")
             toSend0 = [x_0.x, x_bit_arr_0, x_firstBit_0.x]
             toSend1 = [x_1.x, x_bit_arr_1, x_firstBit_1.x]
             self.sendShares("p0",toSend0,"bundle0");self.sendShares("p1",toSend1,"bundle1")
@@ -1014,18 +1011,13 @@ class Party:
             #time.sleep(0.1)
             #r = MyType(self.recvInt("p2"), is_zl=False)
             #print("p2 r: ", r.x)
-            print("private comparing")
             beta_prime = self.privateCompare()
-            print("done private comparing")
 
             #print("beta': ",beta_prime)
             beta_prime_0, beta_prime_1 = generateMyTypeShares(beta_prime)
             #print(f"beta'0: {beta_prime_0.x}, beta'1: {beta_prime_1.x}")
-            print("sending beta_prime")
             self.sendInt("p0", beta_prime_0.x,"beta_prime_0"); self.sendInt("p1", beta_prime_1.x,"beta_prime_1")
-            print("multing")
             self.mult()
-            print("done multing")
 
     def bitDecomp(self, a=MyType(0)):
         if self.party == "p0":
@@ -1484,7 +1476,7 @@ def test_computeMSBTruth():
         time.sleep(0.5)
 
     end = time.time()
-    times_list.append(end-start)
+    times_list.append(end-start - (1000*0.5))
     bytes_list.append(bytessent)
 
 
