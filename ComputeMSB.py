@@ -218,7 +218,7 @@ class Party:
         listenSocket, _ = listenSocket.accept()
         while communication_On:
             data = listenSocket.recv(4096)
-            print("received this data:\n",data)
+            #print("received this data:\n",data)
             # while(chr(data[-1]) != '.'):
             #     #print("gotta wait till a dot., this is what i have \n",data)
             #     more = listenSocket.recv(4096)
@@ -250,7 +250,7 @@ class Party:
             #         self.seenlist.append(data_arr[1])
             # else:
             data_arr = pickle.loads(data)
-            print("loaded up it is:\n",data_arr)
+            #print("loaded up it is:\n",data_arr)
             #print(data_arr)
             self.listenBuffer[data_arr[1]] = data_arr[0]
             self.seenlist.append(data_arr[1])
@@ -402,7 +402,7 @@ class Party:
     def send(self, sendTo, value):
         global bytessent
         bytessent =  bytessent + len(value)
-        print("sending the following: \n",value)
+        #print("sending the following: \n",value)
         if(self.party == "p0"):
             if(sendTo == "p1"):
                 self.socket01send.sendall(value)
@@ -1480,8 +1480,8 @@ def test_computeMSBTruth():
             party.computeMSB()
         else:
             party.computeMSB(party.converted_shares[c])
-        
-        time.sleep(0.5)
+        print("done",c+1,"out of",len(party.shares))
+        time.sleep(0.1)
 
     end = time.time()
     times_list.append(end-start)
