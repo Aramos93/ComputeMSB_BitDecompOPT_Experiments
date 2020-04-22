@@ -1322,13 +1322,12 @@ def test_bitDecompOptDist():
         time.sleep(0.1)
         print("done",c+1,"out of",len(party.shares))
     end = time.time()
-    end = end - (len(party.shares)*0.1)
 
     print("##########################################################")
     print("BITDECOMP TEST FOR TRUTH")
     print(party.bitDecompOptResults)
     print("#########################################################")
-    print("TIME TAKEN",end - start)
+    print("TIME TAKEN",end - start - len(party.shares)*0.1)
     print("bytes sent:",bytessent)
     print("")
 
