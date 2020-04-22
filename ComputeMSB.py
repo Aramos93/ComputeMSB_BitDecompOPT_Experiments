@@ -1379,13 +1379,13 @@ def test_shareConvertTruth():
     end = time.time()
     times_list.append(end-start)
     bytes_list.append(bytessent)
-
-    print("##########################################################")
-    print(f"SHARECONVERT TEST TRUTH for {len(party.shares)} inputs") 
-    print("ShareConvert time:", end-start)
-    print("Bytes sent in ShareConvert:",bytessent)
-    print("##########################################################")
-    print("")
+    if(whoami != 2):
+        print("##########################################################")
+        print(f"SHARECONVERT TEST TRUTH for {len(party.shares)} inputs") 
+        print("ShareConvert time:", end-start)
+        print("Bytes sent in ShareConvert:",bytessent)
+        print("##########################################################")
+        print("")
 
 def test_shareConvert():
     for c in range(len(p0.shares)):
@@ -1464,13 +1464,13 @@ def test_computeMSBTruth():
     bytes_list.append(bytessent)
 
 
-    
-    print("##########################################################")
-    print(f"MSB TEST TRUTH for {len(party.shares)} inputs")
-    print("ComputeMSB time:",end - start)
-    print("Bytes sent in ComputeMSB:",bytessent)
-    print("#########################################################")
-    print("")
+    if(whoami != 2):
+        print("##########################################################")
+        print(f"MSB TEST TRUTH for {len(party.shares)} inputs")
+        print("ComputeMSB time:",end - start)
+        print("Bytes sent in ComputeMSB:",bytessent)
+        print("#########################################################")
+        print("")
 
 def test_computeMSB():
     #p0.converted_shares = [MyType(10),MyType(1),MyType(3),MyType(7),MyType(10),MyType(2),MyType(3),MyType(7),MyType(5),MyType(11)]
@@ -1720,7 +1720,7 @@ test_computeMSBTruth()
 #p0.closeCommunication()
 #p1.closeCommunication()
 #p2.closeCommunication()
-
-print_total_data()
+if(whoami!=2):
+    print_total_data()
 
 # test_bitDecompOptDist()
