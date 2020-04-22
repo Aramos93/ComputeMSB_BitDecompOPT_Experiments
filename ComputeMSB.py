@@ -240,6 +240,7 @@ class Party:
             #         return
             #print(data) 
             if(data.count(b'.') > 1):
+                print("this data yo has more than 1 dot\n",data)
                 arr = data.split(b'.')
                 for d in arr[:-1]:
                     data_arr = pickle.loads(d+b'.')
@@ -843,8 +844,7 @@ class Party:
 
     # Convert a shares of some value a in ZL to shares of the same value in ZL-1
     def shareConvert(self, a=MyType(0)):
-        if self.party == "p0" or self.party == "p1":
-            rec = self.reconstruct2PCSingleInt(a) # This reconstruction is only to check value of a
+
         # Use same random seed to ensure all parties share same common randomness: r, r_0, r_1, n''
         random.seed(seed)
         n_prime_prime = MyType(random.randint(0,1))
@@ -854,8 +854,6 @@ class Party:
         alpha = self.wrap(r_0, r_1)
         
         if(self.party == "p0"):
-            if rec.x == ((2**L) - 1) :
-                raise Exception(f"Reconstructed value 'a' is {rec.x} == L-1 {(2**L)-1} which is not allowed according to protocol")
             a_tilde = a + r_0
             beta = self.wrap(a, r_0)
             self.sendInt("p2", a_tilde.x, "a_tilde_0")
