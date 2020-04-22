@@ -1390,6 +1390,7 @@ def test_shareConvertTruth():
             party.shareConvert()
         else:
             party.shareConvert(party.shares[c])
+        print("done",c+1,"out of",len(party.shares))
         
     end = time.time()
     times_list.append(end-start)
