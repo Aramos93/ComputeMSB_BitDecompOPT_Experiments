@@ -239,7 +239,7 @@ class Party:
             #         print("second one",data_arr1)
             #         return
             #print(data) 
-            if(data.count(b'.' > 1)):
+            if(data.count(b'.') > 1):
                 arr = data.split(b'.')
                 for d in arr[:-1]:
                     data_arr = pickle.loads(d+b'.')
