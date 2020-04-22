@@ -218,25 +218,25 @@ class Party:
         listenSocket, _ = listenSocket.accept()
         while communication_On:
             data = listenSocket.recv(4096)
-            while(chr(data[-1]) != '.'):
-                #print("gotta wait till a dot., this is what i have \n",data)
-                more = listenSocket.recv(4096)
-                data += more
+            # while(chr(data[-1]) != '.'):
+            #     #print("gotta wait till a dot., this is what i have \n",data)
+            #     more = listenSocket.recv(4096)
+            #     data += more
 
             #print(data, "\n", "length of data ",len(data))
-            if(len(data) > 1600):
-                if(data.count(b'\xbee') > 1): 
-                    arr = data.split(b'\xbee.')
-                    data_arr0 = pickle.loads(arr[0]+b'\xbee.')
-                    data_arr1 = pickle.loads(arr[1]+b'\xbee.')
-                    self.listenBuffer[data_arr0[1]] = data_arr0[0]
-                    self.seenlist.append(data_arr0[1])
-                    self.listenBuffer[data_arr1[1]] = data_arr1[0]
-                    self.seenlist.append(data_arr1[1])
-                    print("this is crazy")
-                    print("first one",data_arr0)
-                    print("second one",data_arr1)
-                    return
+            # if(len(data) > 1600):
+            #     if(data.count(b'\xbee') > 1): 
+            #         arr = data.split(b'\xbee.')
+            #         data_arr0 = pickle.loads(arr[0]+b'\xbee.')
+            #         data_arr1 = pickle.loads(arr[1]+b'\xbee.')
+            #         self.listenBuffer[data_arr0[1]] = data_arr0[0]
+            #         self.seenlist.append(data_arr0[1])
+            #         self.listenBuffer[data_arr1[1]] = data_arr1[0]
+            #         self.seenlist.append(data_arr1[1])
+            #         print("this is crazy")
+            #         print("first one",data_arr0)
+            #         print("second one",data_arr1)
+            #         return
             #print(data) 
             data_arr = pickle.loads(data)
             #print(data_arr)
