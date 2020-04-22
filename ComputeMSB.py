@@ -1391,9 +1391,10 @@ def test_shareConvertTruth():
         else:
             party.shareConvert(party.shares[c])
         print("done",c+1,"out of",len(party.shares))
+        time.sleep(0.1)
         
     end = time.time()
-    times_list.append(end-start)
+    times_list.append(end-start -(1000*0.1))
     bytes_list.append(bytessent)
     if(whoami != 2):
         print("##########################################################")
