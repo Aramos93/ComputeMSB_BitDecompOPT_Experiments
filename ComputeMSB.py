@@ -206,7 +206,8 @@ class Party:
             self.readFile(file1)
         elif partyName == 1:
             self.readFile(file2)
-        
+        elif partyName == 2:
+            self.readFile(file2)
         self.setupCommunication()
 
 
