@@ -1481,7 +1481,7 @@ def test_computeMSBTruth():
         else:
             party.computeMSB(party.converted_shares[c])
         print("done",c+1,"out of",len(party.shares))
-        time.sleep(0.1)
+        time.sleep(0.5)
 
     end = time.time()
     times_list.append(end-start)
