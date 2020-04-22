@@ -1318,7 +1318,7 @@ def test_bitDecompOptDist():
     start = time.time()
     for c in range(len(party.shares)):
         party.bitDecompOpt(party.shares[c])
-        time.sleep(0.5)
+        time.sleep(0.1)
     end = time.time()
     
 
