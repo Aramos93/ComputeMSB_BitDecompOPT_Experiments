@@ -147,12 +147,12 @@ class Party:
             self.socket01recv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.socket01recv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             self.socket01recv.bind(('0.0.0.0',self.lookup.get('p0_recv_from_p1')))
-            # self.socket02send = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            # self.socket02send.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            # self.socket02send.bind(('0.0.0.0',self.lookup.get('p0_send_to_p2')))
-            # self.socket02recv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            # self.socket02recv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            # self.socket02recv.bind(('0.0.0.0',self.lookup.get('p0_recv_from_p2')))
+            self.socket02send = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.socket02send.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            self.socket02send.bind(('0.0.0.0',self.lookup.get('p0_send_to_p2')))
+            self.socket02recv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.socket02recv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            self.socket02recv.bind(('0.0.0.0',self.lookup.get('p0_recv_from_p2')))
 
         elif(partyName == 1):
             self.socket10send = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -161,12 +161,12 @@ class Party:
             self.socket10recv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.socket10recv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             self.socket10recv.bind(('0.0.0.0',self.lookup.get('p1_recv_from_p0')))
-            # self.socket12send = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            # self.socket12send.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            # self.socket12send.bind(('0.0.0.0',self.lookup.get('p1_send_to_p2')))
-            # self.socket12recv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            # self.socket12recv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            # self.socket12recv.bind(('0.0.0.0',self.lookup.get('p1_recv_from_p2')))
+            self.socket12send = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.socket12send.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            self.socket12send.bind(('0.0.0.0',self.lookup.get('p1_send_to_p2')))
+            self.socket12recv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.socket12recv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            self.socket12recv.bind(('0.0.0.0',self.lookup.get('p1_recv_from_p2')))
 
         elif(partyName == 2):
             self.socket20send = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -287,9 +287,9 @@ class Party:
             thread3.start()
             
 
-            # thread4 = threading.Thread(target=self.listen,kwargs=dict(listenSocket=self.socket02recv))
-            # thread4.daemon = True              
-            # thread4.start()
+            thread4 = threading.Thread(target=self.listen,kwargs=dict(listenSocket=self.socket02recv))
+            thread4.daemon = True              
+            thread4.start()
             
 
 
@@ -297,9 +297,9 @@ class Party:
             thread1.daemon = True
             thread1.start()
 
-            # thread2 = threading.Thread(target=self.connect,kwargs=dict(sendSocket=self.socket02send,targetAddress=p2address,target=2,source=0))
-            # thread2.daemon = True
-            # thread2.start()
+            thread2 = threading.Thread(target=self.connect,kwargs=dict(sendSocket=self.socket02send,targetAddress=p2address,target=2,source=0))
+            thread2.daemon = True
+            thread2.start()
 
             
 
@@ -893,15 +893,11 @@ class Party:
     
 
     def computeMSB(self, a=MyType(0)):
-        if self.party == "p0" or self.party == "p1":
-            rec = self.reconstruct2PCSingleInt(a)
         random.seed(seed)
         #beta = MyType(random.randint(0,1),is_zl=False)
         beta = MyType(1,is_zl=False)       
 
         if self.party == "p0":
-            #if rec.x >= ((2**L) - 1):
-             #   raise Exception(f"Reconstructed value 'a' is {rec.x} which is NOT in ZL-1 {(2**L) -1}")
             x_0 = MyType(self.recvInt("p0","x_0"), is_zl=False)   
             x_bit_arr_0 = literal_eval(self.recvShares("p0","x_bit_arr_0"))
             x_firstBit_0 = self.recvInt("p0","x_firstBit_0")
@@ -1374,39 +1370,18 @@ def test_shareConvertTruth():
     global bytessent
     bytessent = 0
     start = time.time()
-    for c in range(len(p0.shares)):
-
-        thread = threading.Thread(target=p2.shareConvert, args=())
-        thread.start()
-
-        threads = [None]*len(parties)
-        for i, p in enumerate(parties):
-            threads[i] = threading.Thread(target=p.shareConvert, args=(p.shares[c],))
-            threads[i].start()
+    for c in range(len(party.shares)):
+        if(whoami == 2):
+            party.shareConvert()
+        else:
+            party.shareConvert(party.shares[c])
         
-        for p,t in zip(parties, threads):
-            t.join(2)
-        thread.join(2)
     end = time.time()
     times_list.append(end-start)
     bytes_list.append(bytessent)
-     
-    real = [(s0+s1).x for s0,s1 in zip(p0.shares,p1.shares)]
-    calculated = [MyType(s0.x+s1.x, is_zl=False).x for s0,s1 in zip(p0.converted_shares,p1.converted_shares)]
-    errors = 0
 
     print("##########################################################")
-    print(f"SHARECONVERT TEST TRUTH for {len(p0.shares)} inputs") 
-    for i, (r, c) in enumerate(zip(real,calculated)):
-        if r == c:
-            continue
-        else:
-            errors = errors +1
-            print("r is ",r)
-            print("c is ",c)
-            print("p0 value:",p0.shares[i].x)
-            print("p1 value:",p1.shares[i].x)
-    print(f"Errors: {errors}/{len(p0.shares)}") 
+    print(f"SHARECONVERT TEST TRUTH for {len(party.shares)} inputs") 
     print("ShareConvert time:", end-start)
     print("Bytes sent in ShareConvert:",bytessent)
     print("##########################################################")
@@ -1476,42 +1451,22 @@ def test_computeMSBTruth():
     bytessent = 0
 
     start = time.time()
-    for c in range(len(p0.converted_shares)):
-        threads = [None]*len(parties)
-        for i, p in enumerate(parties):
-           
-            threads[i] = threading.Thread(target=p.computeMSB, args=(p.converted_shares[c],))
-            threads[i].start()
-           
-        
-        thread = threading.Thread(target=p2.computeMSB, args=())
-        thread.start()
+    for c in range(len(party.converted_shares)):
 
-        for t in threads:
-            t.join(2)
-        thread.join(2)
+        if(whoami == 2):
+            party.computeMSB()
+        else:
+            party.computeMSB(party.converted_shares[c])
+        
 
     end = time.time()
     times_list.append(end-start)
     bytes_list.append(bytessent)
 
 
-    realMSB = [int(p0.convertToBitString(MyType(s0.x+s1.x,is_zl=False))[0]) for s0,s1 in zip(p0.converted_shares,p1.converted_shares)]
-    calculatedMSB = [MyType(s0.x+s1.x).x for s0,s1 in zip(p0.msbResults,p1.msbResults)]
-    errors = 0
     
     print("##########################################################")
     print(f"MSB TEST TRUTH for {len(p0.shares)} inputs")
-    for i, (r, c) in enumerate(zip(realMSB,calculatedMSB)):
-        if r == c:
-            continue
-        else:
-            errors = errors +1
-            print("r is ",r)
-            print("c is ",c)
-            print("p0 value:",p0.converted_shares[i].x)
-            print("p1 value:",p1.converted_shares[i].x)
-    print(f"Errors: {errors}/{len(p0.shares)}")
     print("ComputeMSB time:",end - start)
     print("Bytes sent in ComputeMSB:",bytessent)
     print("#########################################################")
@@ -1728,19 +1683,19 @@ def print_total_data():
     print("Total time taken:",sum(times_list))
     print("Total bytes sent:",sum(bytes_list))
     print()
-    print("Avg time per ShareConvert:",times_list[0]/len(p0.shares))
+    print("Avg time per ShareConvert:",times_list[0]/len(party.shares))
     if len(times_list) > 1:
-        print("Avg time per ComputeMSB:",times_list[1]/len(p0.shares))
-        print("Avg time per PrivateCompare:",subRoutineTimer1/(2*len(p0.shares)))
+        print("Avg time per ComputeMSB:",times_list[1]/len(party.shares))
+        print("Avg time per PrivateCompare:",subRoutineTimer1/(2*len(party.shares)))
     else:
-        print("Avg time per PrivateCompare:",subRoutineTimer1/len(p0.shares))
+        print("Avg time per PrivateCompare:",subRoutineTimer1/len(party.shares))
     print()
-    print("Avg number of bytes sent per ShareConvert:",bytes_list[0]/len(p0.shares))
+    print("Avg number of bytes sent per ShareConvert:",bytes_list[0]/len(party.shares))
     if len(bytes_list) > 1:
-        print("Avg number of bytes sent per ComputeMSB:",bytes_list[1]/len(p0.shares))
-        print("Avg number of bytes sent per PrivateCompare:",subRoutineByteCounter1/(2*len(p0.shares)))
+        print("Avg number of bytes sent per ComputeMSB:",bytes_list[1]/len(party.shares))
+        print("Avg number of bytes sent per PrivateCompare:",subRoutineByteCounter1/(2*len(party.shares)))
     else:
-        print("Avg number of bytes sent per PrivateCompare:",subRoutineByteCounter1/len(p0.shares))
+        print("Avg number of bytes sent per PrivateCompare:",subRoutineByteCounter1/len(party.shares))
 
 # test_matMultList() 
 # test_matMult()
@@ -1748,7 +1703,7 @@ def print_total_data():
 # test_bitDecompTruth()
 # test_shareConvertTruth()
 # test_shareConvert()
-# test_computeMSBTruth()
+test_computeMSBTruth()
 # test_computeMSB()
 # test_mult()   
 # test_privateCompare()
@@ -1766,6 +1721,6 @@ def print_total_data():
 #p1.closeCommunication()
 #p2.closeCommunication()
 
-#print_total_data()
+print_total_data()
 
-test_bitDecompOptDist()
+# test_bitDecompOptDist()
