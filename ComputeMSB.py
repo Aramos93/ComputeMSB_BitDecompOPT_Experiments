@@ -218,6 +218,7 @@ class Party:
         listenSocket, _ = listenSocket.accept()
         while communication_On:
             data = listenSocket.recv(4096)
+            print("received this data:\n",data)
             # while(chr(data[-1]) != '.'):
             #     #print("gotta wait till a dot., this is what i have \n",data)
             #     more = listenSocket.recv(4096)
@@ -239,6 +240,7 @@ class Party:
             #         return
             #print(data) 
             data_arr = pickle.loads(data)
+            print("loaded up it is:\n",data_arr)
             #print(data_arr)
             self.listenBuffer[data_arr[1]] = data_arr[0]
             self.seenlist.append(data_arr[1])
@@ -390,7 +392,7 @@ class Party:
     def send(self, sendTo, value):
         global bytessent
         bytessent =  bytessent + len(value)
-        #print("sending the following: \n",value)
+        print("sending the following: \n",value)
         if(self.party == "p0"):
             if(sendTo == "p1"):
                 self.socket01send.sendall(value)
