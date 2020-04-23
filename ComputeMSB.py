@@ -26,8 +26,8 @@ times_list = []
 subRoutineTimer1 = 0
 subRoutineByteCounter1 = 0
 
-p0address = '167.172.52.101'
-p1address = '178.62.100.64'
+p0address = '161.35.80.114'
+p1address = '68.183.70.159'
 p2address = '178.128.44.8'
 
 communication_On = True
