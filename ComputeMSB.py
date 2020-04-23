@@ -27,7 +27,7 @@ subRoutineTimer1 = 0
 subRoutineByteCounter1 = 0
 
 p0address = '167.172.52.101'
-p1address = '178.62.100.64'
+p1address = '178.128.44.8'
 p2address = '178.128.44.8'
 
 communication_On = True
