@@ -224,7 +224,7 @@ class Party:
                 data += more
 
             #print(data, "\n", "length of data ",len(data))
-            if(len(data) > 1600):
+            if(len(data) > 150):
                 if(data.count(b'\x94e') > 1): 
                     arr = data.split(b'\x94e.')
                     data_arr0 = pickle.loads(arr[0]+b'\x94e.')
@@ -1330,7 +1330,7 @@ def test_bitDecompOptDist():
     start = time.time()
     for c in range(len(party.shares)):
         party.bitDecompOpt(party.shares[c])
-        time.sleep(0.5)
+        time.sleep(0.1)
         print("done",c+1,"out of",len(party.shares))
     end = time.time()
 
@@ -1338,7 +1338,7 @@ def test_bitDecompOptDist():
     print("BITDECOMP TEST FOR TRUTH")
     print(party.bitDecompOptResults)
     print("#########################################################")
-    print("TIME TAKEN",end - start - len(party.shares)*0.5)
+    print("TIME TAKEN",end - start - len(party.shares)*0.1)
     print("bytes sent:",bytessent)
     print("")
 
