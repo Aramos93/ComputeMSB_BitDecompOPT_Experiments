@@ -225,10 +225,10 @@ class Party:
 
             #print(data, "\n", "length of data ",len(data))
             if(len(data) > 1600):
-                if(data.count(b'\xbee') > 1): 
-                    arr = data.split(b'\xbee.')
-                    data_arr0 = pickle.loads(arr[0]+b'\xbee.')
-                    data_arr1 = pickle.loads(arr[1]+b'\xbee.')
+                if(data.count(b'\x94e') > 1): 
+                    arr = data.split(b'\x94e.')
+                    data_arr0 = pickle.loads(arr[0]+b'\x94e.')
+                    data_arr1 = pickle.loads(arr[1]+b'\x94e.')
                     self.listenBuffer[data_arr0[1]] = data_arr0[0]
                     self.seenlist.append(data_arr0[1])
                     self.listenBuffer[data_arr1[1]] = data_arr1[0]
@@ -688,7 +688,7 @@ class Party:
             
             #E_0, F_0 = literal_eval(self.recvShares("p1","E_0,F_0"+id))
             E_0, F_0 = byteconv.makemats(literal_eval(self.recvShares("p1","E_0,F_0"+str(id))))
-            
+
             #print("received ","E_0,F_0"+id)
             E_0_list = [BigMat(e) for e in E_0]
             F_0_list = [BigMat(f) for f in F_0]
