@@ -358,7 +358,7 @@ class Party:
                 data = self.listenBuffer.pop(mark)
                 return(int(data))
             else:
-                time.sleep(0.000000001)
+                time.sleep(0.0000001)
                 continue
                 
            
@@ -514,7 +514,7 @@ class Party:
             #lock.acquire()
             end_byte_count = bytessent
             subRoutineTimer1 = subRoutineTimer1 + (end-start)
-            subRoutineByteCounter1 = subRoutineByteCounter1 + (end_byte_count-start_byte_count)
+            subRoutineByteCounter1 += (end_byte_count-start_byte_count)
             #lock.release()
             if 0 in d:
                 self.pcResult = 1
@@ -1532,9 +1532,6 @@ def test_computeMSBTruth():
     print("ComputeMSB time:",end - start)
     print("Bytes sent in ComputeMSB:",bytessent)
     print("Local computation times")
-    print(len(local_times0))
-    print(len(local_times1))
-    print(len(local_times2))
     print("p0:",sum(local_times0)+p0SC)
     print("p1:",sum(local_times1)+p1SC)
     print("p2:",sum(local_times2)+p2SC)
@@ -1772,7 +1769,7 @@ def print_total_data():
 # test_bitDecompTruth()
 # test_shareConvertTruth()
 # test_shareConvert()
-test_computeMSBTruth()
+# test_computeMSBTruth()
 # test_computeMSB()
 # test_mult()   
 # test_privateCompare()
@@ -1780,9 +1777,9 @@ test_computeMSBTruth()
 # test_reconstruct2PC()
 # test_MyType()
 # test_connection()
-# test_bitDecompOptTruth()
+test_bitDecompOptTruth()
 # test_bitDecompOpt_time()
 # test_mult2()
 
-#print_total_data()
+# print_total_data()
 
