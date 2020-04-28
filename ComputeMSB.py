@@ -224,8 +224,7 @@ class Party:
                 data += more
 
             #print(data, "\n", "length of data ",len(data))
-            print(data)
-            if(len(data) > 150):
+            if(len(data) > 140):
                 if(data.count(b'\x02e') > 1): 
                     arr = data.split(b'\x02e.')
                     data_arr0 = pickle.loads(arr[0]+b'\x02e.')
