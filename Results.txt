@@ -110,3 +110,37 @@ p0-p1 16.2 ms
 
 TIME TAKEN 99.53521800041199                                                                                         
 bytes sent: 9073000
+
+-----------------------------------------------------------------
+
+BitDecompOpt (local 1000 inputs)
+
+TIME TAKEN 39.3707332611084
+bytes sent: 20325509
+
+Time taken for local computations:
+p0: 9.783801794052124
+p1: 10.169938325881958
+Avg: 9,975
+
+
+-----------------------------------------------------------------
+
+ComputeMSB (local 1000 inputs)
+
+Total time taken: 24.082720041275024
+Total bytes sent: 1990000
+
+Avg time per ShareConvert: 0.010452532768249511
+Avg time per ComputeMSB: 0.013630187273025512
+Avg time per PrivateCompare: 0.0051756007671356205
+
+Avg number of bytes sent per ShareConvert: 851.45
+Avg number of bytes sent per ComputeMSB: 1138.55
+Avg number of bytes sent per PrivateCompare: 330.262
+
+Time taken for local computations:
+p0: 0.2446136474609375
+p1: 0.2633342742919922
+p2: 0.15424442291259766
+Avg: 0,2166666666666667
