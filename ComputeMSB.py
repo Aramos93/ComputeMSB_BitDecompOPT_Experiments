@@ -28,7 +28,7 @@ subRoutineTimer1 = 0
 subRoutineByteCounter1 = 0
 
 p0address = '161.35.80.114'
-p1address = '178.128.44.8'
+p1address = '68.183.70.159'
 p2address = '178.128.44.8'
 
 communication_On = True
@@ -1324,13 +1324,13 @@ def test_bitDecompOptTruth():
     print("")
 
 def test_bitDecompOptDist():
-    generateBeaverTriplets(300000)
-    generateMatBeaverTriplets(300000)
+    generateBeaverTriplets(200000)
+    generateMatBeaverTriplets(200000)
     print("generated")
     start = time.time()
     for c in range(len(party.shares)):
         party.bitDecompOpt(party.shares[c])
-        time.sleep(0.1)
+        time.sleep(0.2)
         print("done",c+1,"out of",len(party.shares))
     end = time.time()
 
@@ -1338,7 +1338,7 @@ def test_bitDecompOptDist():
     print("BITDECOMP TEST FOR TRUTH")
     print(party.bitDecompOptResults)
     print("#########################################################")
-    print("TIME TAKEN",end - start - len(party.shares)*0.1)
+    print("TIME TAKEN",end - start - len(party.shares)*0.2)
     print("bytes sent:",bytessent)
     print("")
 
