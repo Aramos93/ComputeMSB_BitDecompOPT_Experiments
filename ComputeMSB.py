@@ -224,6 +224,7 @@ class Party:
                 data += more
 
             #print(data, "\n", "length of data ",len(data))
+            print(data)
             if(len(data) > 150):
                 if(data.count(b'\x94e') > 1): 
                     arr = data.split(b'\x94e.')
