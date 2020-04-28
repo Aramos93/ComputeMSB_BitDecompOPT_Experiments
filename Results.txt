@@ -1,0 +1,112 @@
+p0 -- p1
+Bitdecompopt 1000
+L = 64
+Latency 240ms
+Result: 
+TIME TAKEN 1600.8348841667175
+bytes sent: 9073000
+
+-------------------------------------------------------------
+
+p0 -- p1 -- p2
+ComputemSB 1000
+L = 64
+Latency P0_P1 240ms
+Latency P1_P2 150ms
+Latency P2_P0 68ms
+
+Total time taken: 1237.7975974082947 s
+Total bytes sent: 418993 bytes
+
+Avg time per ShareConvert: 0.45469777822494506
+Avg time per ComputeMSB: 0.7830998191833496
+Avg time per PrivateCompare: 0.0
+
+Avg number of bytes sent per ShareConvert: 185.471
+Avg number of bytes sent per ComputeMSB: 233.522
+Avg number of bytes sent per PrivateCompare: 0.0
+
+
+------------------------------------------------------------
+
+p0 -- p1 -- p2
+Computemsb 1000
+L = 64
+
+Latency P0_P1_P2 0.7ms
+
+Total time taken: 12.195880651473999
+Total bytes sent: 418993
+
+Avg time per ShareConvert: 0.004714335441589355
+Avg time per ComputeMSB: 0.0074815452098846436
+Avg time per PrivateCompare: 0.0
+
+Avg number of bytes sent per ShareConvert: 185.471
+Avg number of bytes sent per ComputeMSB: 233.522
+Avg number of bytes sent per PrivateCompare: 0.0
+
+--------------------------------------------------------------------------
+
+
+p0 -- p1
+Bitdecompopt
+
+latency P0_P1 0.7ms
+
+TIME TAKEN 60.87641525268555
+bytes sent: 9073000
+fuck
+
+-------------------------------------------------------------------
+
+Computemsb
+p0 (Amsterdam)
+p1 (Frankfurt)
+p2 (London)
+
+p0-p1: 12.2 ms
+p0-p2: 6.4  ms
+p1-p2: 16.2 ms
+
+Total time taken: 100.00610637664795
+Total bytes sent: 416984
+
+Avg time per ShareConvert: 0.051145442247390746
+Avg time per ComputeMSB: 0.0488606641292572
+Avg time per PrivateCompare: 0.0
+
+Avg number of bytes sent per ShareConvert: 185.481
+Avg number of bytes sent per ComputeMSB: 231.503
+Avg number of bytes sent per PrivateCompare: 0.0
+
+
+-----------------------------------------------------------------
+Bitdecompopt
+p0 amsterdam
+p1 london
+p0-p1 6.4 ms
+
+TIME TAKEN 73.51729202270508
+bytes sent: 9073000
+
+
+------------------------------------------------------------------
+Bitdecompopt
+p0 amsterdam
+p1 frankfurt
+p0-p1 12.0 ms
+
+TIME TAKEN 78.79000163078308                                                                                         
+bytes sent: 9073000
+
+
+-----------------------------------------------------------------
+
+Bitdecompopt
+p0 london
+p1 frankfurt
+p0-p1 16.2 ms
+
+TIME TAKEN 99.53521800041199                                                                                         
+bytes sent: 9073000
