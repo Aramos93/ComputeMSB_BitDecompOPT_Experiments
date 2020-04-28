@@ -233,9 +233,6 @@ class Party:
                     self.seenlist.append(data_arr0[1])
                     self.listenBuffer[data_arr1[1]] = data_arr1[0]
                     self.seenlist.append(data_arr1[1])
-                    print("this is crazy")
-                    print("first one",data_arr0)
-                    print("second one",data_arr1)
                     continue
             #print(data) 
             data_arr = pickle.loads(data)
