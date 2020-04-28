@@ -226,10 +226,10 @@ class Party:
             #print(data, "\n", "length of data ",len(data))
             print(data)
             if(len(data) > 150):
-                if(data.count(b'\x94e') > 1): 
-                    arr = data.split(b'\x94e.')
-                    data_arr0 = pickle.loads(arr[0]+b'\x94e.')
-                    data_arr1 = pickle.loads(arr[1]+b'\x94e.')
+                if(data.count(b'\x02e') > 1): 
+                    arr = data.split(b'\x02e.')
+                    data_arr0 = pickle.loads(arr[0]+b'\x02e.')
+                    data_arr1 = pickle.loads(arr[1]+b'\x02e.')
                     self.listenBuffer[data_arr0[1]] = data_arr0[0]
                     self.seenlist.append(data_arr0[1])
                     self.listenBuffer[data_arr1[1]] = data_arr1[0]
