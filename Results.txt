@@ -117,32 +117,35 @@ bytes sent: 9073000
 
 BitDecompOpt (local 1000 inputs)
 
-TIME TAKEN 39.3707332611084
-bytes sent: 20325509
+TIME TAKEN 31.83810567855835
+bytes sent: 3849853
 
 Time taken for local computations:
-p0: 9.783801794052124
-p1: 10.169938325881958
-Avg: 9,975
+p0: 10.938763618469238
+p1: 11.260262966156006
+Avg: 11.1
+Avg per bitDecompOPT call: 0.0111
 
 
 -----------------------------------------------------------------
 
 ComputeMSB (local 1000 inputs)
 
-Total time taken: 24.082720041275024
-Total bytes sent: 1990000
+Total time taken: 22.0384259223938
+Total bytes sent: 1987493
 
-Avg time per ShareConvert: 0.010452532768249511
-Avg time per ComputeMSB: 0.013630187273025512
-Avg time per PrivateCompare: 0.0051756007671356205
+Avg time per ShareConvert: 0.009785221815109253
+Avg time per ComputeMSB: 0.012253204107284546
+Avg time per PrivateCompare: 0.004973518252372741
 
-Avg number of bytes sent per ShareConvert: 851.45
-Avg number of bytes sent per ComputeMSB: 1138.55
-Avg number of bytes sent per PrivateCompare: 330.262
+Avg number of bytes sent per ShareConvert: 851.493
+Avg number of bytes sent per ComputeMSB: 1136.0
+Avg number of bytes sent per PrivateCompare: 330.2235
 
 Time taken for local computations:
-p0: 0.2446136474609375
-p1: 0.2633342742919922
-p2: 0.15424442291259766
-Avg: 0,2166666666666667
+Local computation times
+p0: 0.1744842529296875
+p1: 0.1845846176147461
+p2: 0.09131217002868652
+Avg: 0.147
+Avg per ComputeMSB call: 0.000147

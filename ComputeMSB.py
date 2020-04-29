@@ -306,8 +306,6 @@ class Party:
     ################ Send and Receive shares ###################
     def sendShares(self, target, value, mark="empty"):
         pickled = pickle.dumps([value,mark])
-        print()
-        print(pickled)
         #print(len(pickled))
         thread = threading.Thread(target=self.send,kwargs=dict(sendTo=target, value=pickled))
         thread.daemon = True
@@ -584,6 +582,8 @@ class Party:
             F_0_list = [((y - b) % 2).matrix for y,b in zip(Y,B)]
             #toSend = [E_0_list, F_0_list]
             toSend = byteconv.makebytes([E_0_list, F_0_list])
+            end = time.time()
+            self.localTimer += end-start
             #print(toSend)
             self.sendShares("p1", toSend,"E_0,F_0"+str(id))
             
@@ -613,6 +613,9 @@ class Party:
             F_1_list = [((y - b) % 2).matrix for y,b in zip(Y,B)]
             #toSend = [E_1_list, F_1_list]
             toSend = byteconv.makebytes([E_1_list, F_1_list])
+
+            end = time.time()
+            self.localTimer += end-start
             self.sendShares("p0", toSend,"E_1,F_1"+str(id))
             
             #E_0, F_0 = literal_eval(self.recvShares("p1","E_0,F_0"+str(id)))
@@ -1330,7 +1333,6 @@ def test_bitDecompOptTruth():
     print("BITDECOMPOPT TEST FOR TRUTH")
     real = [int(p0.convertToBitString(MyType(s0.x+s1.x))[0]) for s0,s1 in zip(p0.shares,p1.shares)]
     calculated = [(int(s0)+int(s1)) % 2 for s0,s1 in zip(p0.bitDecompOptResults,p1.bitDecompOptResults)]
-    print(calculated)
     errors = 0
     for i, (r, c) in enumerate(zip(real,calculated)):
         if r == c:
@@ -1775,7 +1777,7 @@ def print_total_data():
 # test_bitDecompTruth()
 # test_shareConvertTruth()
 # test_shareConvert()
-# test_computeMSBTruth()
+test_computeMSBTruth()
 # test_computeMSB()
 # test_mult()   
 # test_privateCompare()
@@ -1783,9 +1785,9 @@ def print_total_data():
 # test_reconstruct2PC()
 # test_MyType()
 # test_connection()
-test_bitDecompOptTruth()
+# test_bitDecompOptTruth()
 # test_bitDecompOpt_time()
 # test_mult2()
 
-# print_total_data()
+print_total_data()
 
