@@ -8,6 +8,7 @@ import threading
 import time
 from ComposeNet import ComposeNet
 from BigMat import BigMat
+import byteconv
 
 ##################################################### Globals ########################################################
 L = 64
@@ -300,7 +301,9 @@ class Party:
     ################ Send and Receive shares ###################
     def sendShares(self, target, value, mark="empty"):
         pickled = pickle.dumps([value,mark])
-        
+        print()
+        print(pickled)
+        #print(len(pickled))
         thread = threading.Thread(target=self.send,kwargs=dict(sendTo=target, value=pickled))
         thread.daemon = True
         thread.start()
@@ -569,11 +572,13 @@ class Party:
         
             E_0_list = [((x - a) % 2).matrix for x,a in zip(X,A)]
             F_0_list = [((y - b) % 2).matrix for y,b in zip(Y,B)]
-            toSend = [E_0_list, F_0_list]
-            print(toSend)
+            #toSend = [E_0_list, F_0_list]
+            toSend = byteconv.makebytes([E_0_list, F_0_list])
+            #print(toSend)
             self.sendShares("p1", toSend,"E_0,F_0"+str(id))
             
-            E_1, F_1 = literal_eval(self.recvShares("p0","E_1,F_1"+str(id)))
+            #E_1, F_1 = literal_eval(self.recvShares("p0","E_1,F_1"+str(id)))
+            E_1, F_1 = byteconv.makemats(literal_eval(self.recvShares("p0","E_1,F_1"+str(id))))
             
             E_1_list = [BigMat(e) for e in E_1]
             F_1_list = [BigMat(f) for f in F_1]
@@ -593,10 +598,12 @@ class Party:
                 A[i] = a; B[i] = b; C[i] = c
             E_1_list = [((x - a) % 2).matrix for x,a in zip(X,A)]
             F_1_list = [((y - b) % 2).matrix for y,b in zip(Y,B)]
-            toSend = [E_1_list, F_1_list]
+            #toSend = [E_1_list, F_1_list]
+            toSend = byteconv.makebytes([E_1_list, F_1_list])
             self.sendShares("p0", toSend,"E_1,F_1"+str(id))
             
-            E_0, F_0 = literal_eval(self.recvShares("p1","E_0,F_0"+str(id)))
+            #E_0, F_0 = literal_eval(self.recvShares("p1","E_0,F_0"+str(id)))
+            E_0, F_0 = byteconv.makemats(literal_eval(self.recvShares("p1","E_0,F_0"+str(id))))
             
             E_0_list = [BigMat(e) for e in E_0]
             F_0_list = [BigMat(f) for f in F_0]
@@ -1187,8 +1194,8 @@ def test_bitDecompTruth():
     print("")
 
 def test_bitDecompOptTruth():
-    generateBeaverTriplets(10000)
-    generateMatBeaverTriplets(10000)
+    generateBeaverTriplets(200)
+    generateMatBeaverTriplets(200)
     
     print("Generated triplets")
     #p0.shares = [MyType(9223372036854775808)]

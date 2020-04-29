@@ -81,25 +81,27 @@ Avg number of bytes sent per ComputeMSB: 231.503
 Avg number of bytes sent per PrivateCompare: 0.0
 
 
+
+
+BITDECOMPOPT IS OPTIMISED FROM HERE
 -----------------------------------------------------------------
 Bitdecompopt
 p0 amsterdam
 p1 london
 p0-p1 6.4 ms
 
-TIME TAKEN 73.51729202270508
-bytes sent: 9073000
+TIME TAKEN 65.098830699920654
+bytes sent: 835000
 
 
 ------------------------------------------------------------------
 Bitdecompopt
 p0 amsterdam
 p1 frankfurt
-p0-p1 12.0 ms
+p0-p1 12.3 ms
 
-TIME TAKEN 78.79000163078308                                                                                         
-bytes sent: 9073000
-
+TIME TAKEN 60.098830699920654
+bytes sent: 835000
 
 -----------------------------------------------------------------
 
@@ -108,5 +110,5 @@ p0 london
 p1 frankfurt
 p0-p1 16.2 ms
 
-TIME TAKEN 99.53521800041199                                                                                         
-bytes sent: 9073000
+TIME TAKEN 95.64402341842651
+bytes sent: 835000
