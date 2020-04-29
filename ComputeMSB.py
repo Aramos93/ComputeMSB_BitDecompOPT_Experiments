@@ -25,8 +25,12 @@ lock = threading.Lock()
 bytessent = 0
 bytes_list = []
 times_list = []
+local_times0 = []
+local_times1 = []
+local_times2 = []
 subRoutineTimer1 = 0
 subRoutineByteCounter1 = 0
+
 
 
 
@@ -179,6 +183,7 @@ class Party:
         self.matTriplets = []
         self.triplets = []
         self.bitDecompOptResults = []
+        self.localTimer = 0
         if partyName == 0:
             self.readFile(file1)
         elif partyName == 1:
@@ -356,7 +361,7 @@ class Party:
                 data = self.listenBuffer.pop(mark)
                 return(int(data))
             else:
-                time.sleep(0.000000001)
+                time.sleep(0.0000001)
                 continue
                 
            
@@ -406,7 +411,7 @@ class Party:
     
 
     def privateCompare(self, x=[], r=MyType(0), beta=MyType(-1)):
-
+        start = time.time()
         if self.party != "p2":
             random.seed(seed)
             x = x[::-1]
@@ -454,6 +459,8 @@ class Party:
             #print("p0 w:",w)
             #print("p0 c:",c)
             d = [(s_x *c_x) % p for s_x, c_x in zip(s,c)]
+            end = time.time()
+            self.localTimer += end-start
             self.sendShares("p2", d, "d_0")
 
         if self.party == "p1":
@@ -490,27 +497,28 @@ class Party:
             #print("p1 c:",c)
             #print("c,p1",c)
             d = [(s_x * c_x) % p for s_x, c_x in zip(s,c)]
-        
+            end = time.time()
+            self.localTimer += end-start
             self.sendShares("p2", d, "d_1")
 
         if self.party == "p2":
             global bytessent
             global subRoutineTimer1 
             global subRoutineByteCounter1
-            lock.acquire()
+            #lock.acquire()
             start_byte_count = bytessent
-            lock.release()
+            #lock.release()
             start = time.time()
 
             d_0 = literal_eval(self.recvShares("p2","d_0"))
             d_1 = literal_eval(self.recvShares("p2","d_1"))
             d = [(x+y) % p for x,y in zip(d_0, d_1)]
             end = time.time()
-            lock.acquire()
+            #lock.acquire()
             end_byte_count = bytessent
             subRoutineTimer1 = subRoutineTimer1 + (end-start)
-            subRoutineByteCounter1 = subRoutineByteCounter1 + (end_byte_count-start_byte_count)
-            lock.release()
+            subRoutineByteCounter1 += (end_byte_count-start_byte_count)
+            #lock.release()
             if 0 in d:
                 self.pcResult = 1
                 return 1
@@ -564,12 +572,14 @@ class Party:
     def matMultList(self, X, Y, id=0):
         length = len(X)
         if self.party == "p0":
+            start = time.time()
             A = [None]*length; B = [None]*length; C = [None]*length; 
             for i in range(length):
                 a,b,c = self.matTriplets.pop(0)
                 A[i] = a; B[i] = b; C[i] = c
              
         
+
             E_0_list = [((x - a) % 2).matrix for x,a in zip(X,A)]
             F_0_list = [((y - b) % 2).matrix for y,b in zip(Y,B)]
             #toSend = [E_0_list, F_0_list]
@@ -579,19 +589,22 @@ class Party:
             
             #E_1, F_1 = literal_eval(self.recvShares("p0","E_1,F_1"+str(id)))
             E_1, F_1 = byteconv.makemats(literal_eval(self.recvShares("p0","E_1,F_1"+str(id))))
-            
+            start2 = time.time()
+
             E_1_list = [BigMat(e) for e in E_1]
             F_1_list = [BigMat(f) for f in F_1]
             
-            E = [((BigMat(e0) + e1) % 2) for e0,e1 in zip(E_0_list,E_1_list)]
-            F = [((BigMat(f0) + f1) % 2) for f0,f1 in zip(F_0_list,F_1_list)]
+            E = [((BigMat(e0) + e1) % L) for e0,e1 in zip(E_0_list,E_1_list)]
+            F = [((BigMat(f0) + f1) % L) for f0,f1 in zip(F_0_list,F_1_list)]
 
-            res = [(((x @ f) + (e @ y) + c) % 2) for x,f,e,y,c in zip(X,F,E,Y,C)]
+            res = [(((x @ f) + (e @ y) + c) % L) for x,f,e,y,c in zip(X,F,E,Y,C)]
+            end2 = time.time()
+            self.localTimer += end2-start2
             self.matMultListResults = res
             return res
             
-            
         if self.party == "p1":
+            start = time.time()
             A = [None]*length; B = [None]*length; C = [None]*length; 
             for i in range(length):
                 a,b,c = self.matTriplets.pop(0)
@@ -604,15 +617,18 @@ class Party:
             
             #E_0, F_0 = literal_eval(self.recvShares("p1","E_0,F_0"+str(id)))
             E_0, F_0 = byteconv.makemats(literal_eval(self.recvShares("p1","E_0,F_0"+str(id))))
-            
+            start2 = time.time()
+
             E_0_list = [BigMat(e) for e in E_0]
             F_0_list = [BigMat(f) for f in F_0]
             
             
-            E = [((e0 + BigMat(e1)) % 2) for e0,e1 in zip(E_0_list,E_1_list)]
-            F = [((f0 + BigMat(f1)) % 2) for f0,f1 in zip(F_0_list,F_1_list)]
+            E = [((e0 + BigMat(e1)) % L) for e0,e1 in zip(E_0_list,E_1_list)]
+            F = [((f0 + BigMat(f1)) % L) for f0,f1 in zip(F_0_list,F_1_list)]
 
             res = [((((e @ f)*-1) + (x @ f) + (e @ y) + c) % 2) for x,f,e,y,c in zip(X,F,E,Y,C)]
+            end2 = time.time()
+            self.localTimer += end2-start2
             self.matMultListResults = res
             return res
 
@@ -620,43 +636,56 @@ class Party:
     def mult(self, x=MyType(0), y=MyType(0)):
         if self.party == "p0":
             shares_0 = literal_eval(self.recvShares("p0","shares_0"))
+            start = time.time()
             a = shares_0[0]; b = shares_0[1]; c = shares_0[2]
             e_0 = MyType(x.x - a)
             f_0 = MyType(y.x - b)
             e_f_shares_0 = [e_0.x, f_0.x]
+            end = time.time()
+            self.localTimer += end-start
             e_f_shares_1 = literal_eval(self.recvShares("p0","e_f_shares_1"))
             #print("e_f shares_0: ", e_f_shares_0)
             self.sendShares("p1", e_f_shares_0,"e_f_shares_0")
+            start2 = time.time()
             #time.sleep(0.1) 
             e_1 = e_f_shares_1[0]; f_1 = e_f_shares_1[1]
             e = MyType(e_0.x + e_1); f = MyType(f_0.x + f_1)
             #print(f"p0 e and f: {e.x}, {f.x}")
             x_mult_y_0 = MyType(-self.partyName * e.x * f.x + x.x * f.x + e.x * y.x + c)
+            end2 = time.time()
+            self.localTimer += end2-start2
             self.multResults.append(x_mult_y_0)
             #print("p0 x*y_0: ", x_mult_y_0.x)
             return x_mult_y_0
         
         if self.party == "p1":
             shares_1 = literal_eval(self.recvShares("p1","shares_1"))
+            start = time.time()
             a = shares_1[0]; b = shares_1[1]; c = shares_1[2]
             e_1 = MyType(x.x - a)
             f_1 = MyType(y.x - b)
             e_f_shares_1 = [e_1.x, f_1.x]
             # print("p1 e_1: ", e_1.x)
             # print("e_f shares_1: ", e_f_shares_1)
+            end = time.time()
+            self.localTimer += end-start
             self.sendShares("p0", e_f_shares_1,"e_f_shares_1")
             #time.sleep(0.1)
             e_f_shares_0 = literal_eval(self.recvShares("p1","e_f_shares_0"))    
+            start2 = time.time()
             e_0 = e_f_shares_0[0]; f_0 = e_f_shares_0[1]
             #print("p1 e_0: ",e_0)
             e = MyType(e_0 + e_1.x); f = MyType(f_0 + f_1.x)
             #print(f"p1 e and f: {e.x}, {f.x}")
             x_mult_y_1 = MyType(-self.partyName * e.x * f.x + x.x * f.x + e.x * y.x + c)
+            end2 = time.time()
+            self.localTimer += end2-start2
             #print("p1 x*y_1: ",x_mult_y_1.x)
             self.multResults.append(x_mult_y_1)
             return x_mult_y_1
 
         if self.party == "p2":
+            start = time.time()
             a = MyType(random.randint(0,2**L))
             b = MyType(random.randint(0,2**L))
             c = MyType(a.x*b.x)
@@ -668,6 +697,8 @@ class Party:
             c_0, c_1 = generateMyTypeShares(c.x)
             #print(f"a, b, c: {a.x},{b.x},{c.x}")
             shares_0 = [a_0.x, b_0.x, c_0.x]; shares_1 = [a_1.x, b_1.x, c_1.x]
+            end = time.time()
+            self.localTimer += end-start
             # shares_0 = [3,10,2]; shares_1 = [12,1,3]
            # print(f"abc_0: {shares_0}, abc_1: {shares_1}")
             self.sendShares("p0", shares_0,"shares_0"); self.sendShares("p1", shares_1,"shares_1")
@@ -709,6 +740,7 @@ class Party:
     def multList(self, X, Y):
         length = len(X)
         if self.party == "p0":
+            start = time.time()
             A = [None]*length; B = [None]*length; C = [None]*length; 
 
             for i in range(length):
@@ -720,17 +752,21 @@ class Party:
             F_0_list = [MyType(y - b).x for y,b in zip(Y,B)]
             
             toSend = [E_0_list, F_0_list]
-            
+            end = time.time()
+            self.localTimer += end-start
             self.sendShares("p1", toSend)
             E_1_list, F_1_list = literal_eval(self.recvShares("p0"))
-            
+            start2 = time.time()
             E = [MyType(e0+e1).x for e0,e1 in zip(E_0_list,E_1_list)]
             F = [MyType(f0+f1).x for f0,f1 in zip(F_0_list,F_1_list)]
 
             res = [MyType((x*f) + (e*y) + c).x for x,f,e,y,c in zip(X,F,E,Y,C)]
+            end2 = time.time()
+            self.localTimer += end2-start2
             self.multListResults.append(res)
             return res
         if self.party == "p1":
+            start = time.time()
             A = [None]*length; B = [None]*length; C = [None]*length; 
             for i in range(length):
                 a,b,c = self.triplets.pop(0)
@@ -739,13 +775,18 @@ class Party:
             E_1_list = [MyType(x - a).x for x,a in zip(X,A)]
             F_1_list = [MyType(y - b).x for y,b in zip(Y,B)]
             toSend = [E_1_list, F_1_list]
+            end = time.time()
+            self.localTimer += end-start
             self.sendShares("p0", toSend)
             E_0_list, F_0_list = literal_eval(self.recvShares("p1"))
+            start2 = time.time()
                
             E = [MyType(e0+e1).x for e0,e1 in zip(E_0_list,E_1_list)]
             F = [MyType(f0+f1).x for f0,f1 in zip(F_0_list,F_1_list)]
 
             res = [MyType(-1*(e * f) + (x * f) + (e * y) + c).x for x,f,e,y,c in zip(X,F,E,Y,C)]
+            end2 = time.time()
+            self.localTimer += end2-start2
             self.multListResults.append(res)
             
             return res
@@ -755,6 +796,7 @@ class Party:
         if self.party == "p0" or self.party == "p1":
             rec = self.reconstruct2PCSingleInt(a) # This reconstruction is only to check value of a
         # Use same random seed to ensure all parties share same common randomness: r, r_0, r_1, n''
+        start = time.time()
         random.seed(seed)
         n_prime_prime = MyType(random.randint(0,1))
         r = MyType(random.randint(1,2**L)) #can't be 0 for some reason. Probably handled in PC
@@ -767,52 +809,69 @@ class Party:
                 raise Exception(f"Reconstructed value 'a' is {rec.x} == L-1 {(2**L)-1} which is not allowed according to protocol")
             a_tilde = a + r_0
             beta = self.wrap(a, r_0)
+            end = time.time()
+            self.localTimer += end-start
             self.sendInt("p2", a_tilde.x, "a_tilde_0")
             x_bit_0 = literal_eval(self.recvShares("p0", "x_bit_arr_0")) # bit shares of x not used because PC not implemented (only dummied)
             delta_0 = self.recvInt("p0", "delta_0")
             self.privateCompare(x_bit_0, r-MyType(1),n_prime_prime)
 
             n_prime_0 = self.recvInt("p0", "n_prime_0")
+            start2 = time.time()
             n_0 = MyType(n_prime_0 + (1 - self.partyName)*n_prime_prime.x - 2 * n_prime_prime.x * n_prime_0, is_zl=False)
             theta = MyType(beta + (1 - self.partyName) * (-alpha - 1) + delta_0 + n_0.x, is_zl=False)
             y_0 = MyType(a.x-theta.x, is_zl=False)
-
+            end2 = time.time()
+            self.localTimer += end2-start2
             #print("After convert - p0 a:",y_0.x)
             self.converted_shares.append(y_0)
             return y_0
         if(self.party == "p1"):
             a_tilde = a + r_1
             beta = self.wrap(a, r_1)
+            end = time.time()
+            self.localTimer += end-start
             self.sendInt("p2", a_tilde.x, "a_tilde_1")
             x_bit_1 = literal_eval(self.recvShares("p1", "x_bit_arr_1")) 
             delta_1 = self.recvInt("p1", "delta_1")
-    
+
             self.privateCompare(x_bit_1, r-MyType(1),n_prime_prime)
 
             n_prime_1 = self.recvInt("p1", "n_prime_1")
+            start2 = time.time()
             n_1 = MyType(n_prime_1 + (1 - self.partyName) * n_prime_prime.x - 2 * n_prime_prime.x * n_prime_1, is_zl=False)
             theta = MyType(beta + (1 - self.partyName) * (-alpha - 1) + delta_1 + n_1.x, is_zl=False)
             y_1 = MyType(a.x-theta.x, is_zl=False)
 
+            end2 = time.time()
+            self.localTimer += end2-start2
             #print("After convert - p1 a:", y_1.x)
             self.converted_shares.append(y_1)
             return y_1
             
         if(self.party == "p2"):
+            end = time.time()
+            self.localTimer += end-start
             a_tilde_0 = MyType(self.recvInt("p2","a_tilde_0"))
             a_tilde_1 = MyType(self.recvInt("p2","a_tilde_1"))
+            start2 = time.time()
             x = a_tilde_0 + a_tilde_1
             delta = self.wrap(a_tilde_0, a_tilde_1)
  
             x_bit_arr_0, x_bit_arr_1 = self.generateBitShares(self.convertToBitString(x))
             delta_0, delta_1 = generateMyTypeShares(delta, False)
+            end2 = time.time()
+            self.localTimer += end2-start2
             self.sendShares("p0", x_bit_arr_0,"x_bit_arr_0"); self.sendShares("p1", x_bit_arr_1, "x_bit_arr_1")
             #time.sleep(0.1)
             self.sendInt("p0", delta_0.x, "delta_0"); self.sendInt("p1", delta_1.x, "delta_1")
             #time.sleep(0.1)   
             n_prime = self.privateCompare()
+            start3 = time.time()
             #n_prime = self.dummyPC(x, r-MyType(1), n_prime_prime)
             n_prime_0, n_prime_1 = generateMyTypeShares(n_prime,False)
+            end3 = time.time()
+            self.localTimer += end3-start3
            
 
             self.sendInt("p0", n_prime_0.x, "n_prime_0"); self.sendInt("p1", n_prime_1.x, "n_prime_1")
@@ -831,17 +890,22 @@ class Party:
             x_0 = MyType(self.recvInt("p0","x_0"), is_zl=False)   
             x_bit_arr_0 = literal_eval(self.recvShares("p0","x_bit_arr_0"))
             x_firstBit_0 = self.recvInt("p0","x_firstBit_0")
+            start = time.time()
             #x_firstBit_0 = 0
             #print(f"p0 received: x_0 {x_0.x}, x_bit_arr_0 {x_bit_arr_0}, xfirstbit {x_firstBit_0}")
             y_0 = MyType(2*a.x, is_zl=False) 
             r_0 = MyType(y_0.x + x_0.x, is_zl=False)  
+            end = time.time()
+            self.localTimer += end-start
             r_1 = MyType(self.recvInt("p0","r_1"), is_zl=False)   
             self.sendInt("p1", r_0.x,"r_0")
+            start2 = time.time()
             #time.sleep(0.1)             
             r = MyType(r_0.x + r_1.x, is_zl=False)
 
+            end2 = time.time()
+            self.localTimer += end2-start2
             self.privateCompare(x_bit_arr_0, r, beta)
-
             # print("p0 a: ", a.x)
             # print("p0 x_0: ", x_0.x)
             # print("p0 y_0: ", y_0.x)
@@ -850,6 +914,7 @@ class Party:
             # print("p0 r: ", r.x)
 
             beta_prime_0 = MyType(self.recvInt("p0","beta_prime_0"))
+            start3 = time.time()
             #beta_prime_0 = MyType(2)
             #print("p0 b':",beta_prime_0.x)
             gamma_0 = MyType(beta_prime_0.x + self.partyName * beta.x - 2 * beta.x * beta_prime_0.x)
@@ -857,10 +922,15 @@ class Party:
             delta_0 = MyType(x_firstBit_0 + self.partyName * int(bin(r.x)[-1]) - 2 * int(bin(r.x)[-1]) * x_firstBit_0)
             #print("p0 delta0: ",delta_0.x)
             #print(f"p0 mult: {gamma_0.x}, {delta_0.x}")
-
+            end3 = time.time()
+            self.localTimer += end3-start3
             theta_0 = self.mult(gamma_0, delta_0)
+            start4 = time.time()
             #print("p0 multres: ", theta_0.x)
             alpha_0 = MyType(gamma_0.x + delta_0.x - 2 * theta_0.x)
+            end4 = time.time()
+            self.localTimer += end4-start4
+            local_times0.append(self.localTimer)
             self.msbResults.append(alpha_0)
             return alpha_0
 
@@ -868,15 +938,20 @@ class Party:
             x_1 = MyType(self.recvInt("p1","x_1"), is_zl=False) 
             x_bit_arr_1 = literal_eval(self.recvShares("p1","x_bit_arr_1"))
             x_firstBit_1 = self.recvInt("p1","x_firstBit_1")
+            start = time.time()
             #x_firstBit_1 = 0
             #print(f"p1 received: x_1 {x_1.x}, x_bit_arr_1 {x_bit_arr_1}, xfirstbit {x_firstBit_1}")
             y_1 = MyType(2*a.x, is_zl=False)    
             r_1 = MyType(y_1.x + x_1.x, is_zl=False)    
+            end = time.time()
+            self.localTimer += end-start
             self.sendInt("p0", r_1.x,"r_1")
             #time.sleep(0.1)
-            r_0 = MyType(self.recvInt("p1","r_0"), is_zl=False)     
+            r_0 = MyType(self.recvInt("p1","r_0"), is_zl=False)   
+            start2 = time.time()  
             r = MyType(r_0.x + r_1.x, is_zl=False)
-
+            end2 = time.time()
+            self.localTimer += end2-start2
             self.privateCompare(x_bit_arr_1, r, beta)
             # print("p1 a: ", a.x)
             # print("p1 x_1: ", x_1.x)
@@ -889,6 +964,7 @@ class Party:
         
 
             beta_prime_1 = MyType(self.recvInt("p1","beta_prime_1"))
+            start3 = time.time()
             #beta_prime_1 = MyType(14)
             #print("p1 b':",beta_prime_1.x)
             gamma_1 = MyType(beta_prime_1.x + self.partyName * beta.x - 2 * beta.x * beta_prime_1.x)
@@ -896,14 +972,20 @@ class Party:
             delta_1 = MyType(x_firstBit_1 + self.partyName * int(bin(r.x)[-1]) - 2 * int(bin(r.x)[-1]) * x_firstBit_1)
             #print("p1 delta1: ",delta_1.x)
             #print(f"p1 mult: {gamma_1.x}, {delta_1.x}")
-
+            end3 = time.time()
+            self.localTimer += end3-start3
             theta_1 = self.mult(gamma_1, delta_1)
+            start4 = time.time()
             #print("p1 multres: ", theta_1.x)
             alpha_1 = MyType(gamma_1.x + delta_1.x - 2 * theta_1.x)
+            end4 = time.time()
+            self.localTimer += end4-start4
+            local_times1.append(self.localTimer)
             self.msbResults.append(alpha_1)
             return alpha_1
 
         if self.party == "p2":
+            start = time.time()
             x = MyType(random.randint(0, (2**L) - 1), is_zl=False)
             #x = MyType(8, is_zl=False)
             x_0, x_1 = generateMyTypeShares(x.x, in_zl=False)
@@ -916,7 +998,8 @@ class Party:
             # print("bin_x: ", bin_x)
             # print(f"x_bit_arr_0: {x_bit_arr_0}, x_bit_arr_1: {x_bit_arr_1}")
             # print(f"x_first_0: {x_firstBit_0.x}, x_first_1: {x_firstBit_1.x}")
-          
+            end = time.time()
+            self.localTimer += end-start
             self.sendInt("p0", x_0.x,"x_0"); self.sendInt("p1", x_1.x,"x_1")
             #time.sleep(0.1)
             self.sendShares("p0", x_bit_arr_0,"x_bit_arr_0"); self.sendShares("p1", x_bit_arr_1, "x_bit_arr_1")
@@ -925,10 +1008,14 @@ class Party:
             #time.sleep(0.1)
             #r = MyType(self.recvInt("p2"), is_zl=False)
             #print("p2 r: ", r.x)
-  
+
             beta_prime = self.privateCompare()
             #print("beta': ",beta_prime)
+            start2 = time.time()
             beta_prime_0, beta_prime_1 = generateMyTypeShares(beta_prime)
+            end2 = time.time()
+            self.localTimer += end2-start2
+            local_times2.append(self.localTimer)
             #print(f"beta'0: {beta_prime_0.x}, beta'1: {beta_prime_1.x}")
             self.sendInt("p0", beta_prime_0.x,"beta_prime_0"); self.sendInt("p1", beta_prime_1.x,"beta_prime_1")
             self.mult()
@@ -1007,14 +1094,17 @@ class Party:
     def bitDecompOpt(self, a=MyType(0)):
         #cnet = ComposeNet(L)
         if self.party == "p0":
+            start = time.time()
             p0 = self.convertToBitString(a)[::-1] #reverse since 0 is lsb
             #print("p0",p0)
             b0 = self.convertToBitString(MyType(0))[::-1]
             g0 = [None]*L
             p0list = [int(a) for a in p0]
             b0list = [int(a) for a in b0]
-
+            end = time.time()
+            self.localTimer += end-start
             g0 = self.multList(p0list,b0list)
+            start2 = time.time()
             g0 = [a % 2 for a in g0]  
 
             #print("g0",g0)
@@ -1024,21 +1114,28 @@ class Party:
             #print("Mj (p0)",M0)
             for i in range(L-1):
                 cnet_0.layers[1][i].matrix = M0[i]
-
+            end2 = time.time()
+            self.localTimer += end2-start2
             for i in range(2, cnet_0.numLayers+1):
+                start3 = time.time()
                 leftlist = []
                 rightlist = []
                 for cnnode in cnet_0.layers[i]:
                     leftlist.append(cnnode.left.matrix)
                     rightlist.append(cnnode.right.matrix)
+                end3 = time.time()
+                self.localTimer += end3-start3
                 result = self.matMultList(rightlist,leftlist,i)
+                start4 = time.time()
                 result = [(c % 2) for c in result]
                 #print(result)
                 for cnode, res in zip(cnet_0.layers[i],result):
                     cnode.matrix = res
+                end4 = time.time()
+                self.localTimer += end4-start4
                 
                 
-
+            start5 = time.time()
             M1_J_0 = cnet_0.getMatrixResults()
             
             
@@ -1051,21 +1148,25 @@ class Party:
             S_J_0.reverse()
             res = S_J_0
             
-
+            end5 = time.time()
+            self.localTimer += end5-start5
+            local_times0.append(self.localTimer)
             self.bitDecompOptResults.append(res[0])
             return res
 
         if self.party == "p1":
             
+            start = time.time()
             p1 = self.convertToBitString(a)[::-1] #reverse since 0 is lsb
             
             b1 = self.convertToBitString(MyType(0))[::-1]
             g1 = [None]*L
             p1list = [int(a) for a in p1]
             b1list = [int(a) for a in b1]
-
+            end = time.time()
+            self.localTimer += end-start
             g1 = self.multList(b1list,p1list)
-           
+            start2 = time.time()
             g1 = [a % 2 for a in g1]
         
             
@@ -1075,20 +1176,27 @@ class Party:
             #print("Mj (p1)",M1)
             for i in range(L-1):
                 cnet_1.layers[1][i].matrix = M1[i]
-
+            end2 = time.time()
+            self.localTimer += end2-start2
             for i in range(2, cnet_1.numLayers+1):
+                start3 = time.time()
                 leftlist = []
                 rightlist = []
                 for cnnode in cnet_1.layers[i]:
                     leftlist.append(cnnode.left.matrix)
                     rightlist.append(cnnode.right.matrix)
+                end3 = time.time()
+                self.localTimer += end3-start3
                 result = self.matMultList(rightlist,leftlist,i)
+                start4 = time.time()
                 result = [c % 2 for c in result]
                 for cnode, res in zip(cnet_1.layers[i],result):
                     cnode.matrix = res
+                end4 = time.time()
+                self.localTimer += end4-start4
                     
                     
-
+            start5 = time.time()
             M1_J_1 = cnet_1.getMatrixResults()
             C_J_1 = [(m.matrix[0][1]) % 2 for m in M1_J_1]
             S_J_1 = [p1list[0]]
@@ -1097,6 +1205,9 @@ class Party:
             S_J_1.reverse()
             res = S_J_1
             
+            end5 = time.time()
+            self.localTimer += end5-start5
+            local_times1.append(self.localTimer)
             self.bitDecompOptResults.append(res[0])
             return res
             
@@ -1194,8 +1305,8 @@ def test_bitDecompTruth():
     print("")
 
 def test_bitDecompOptTruth():
-    generateBeaverTriplets(200)
-    generateMatBeaverTriplets(200)
+    generateBeaverTriplets(200000)
+    generateMatBeaverTriplets(200000)
     
     print("Generated triplets")
     #p0.shares = [MyType(9223372036854775808)]
@@ -1203,6 +1314,8 @@ def test_bitDecompOptTruth():
     start = time.time()
     for c in range(len(p0.shares)):
         threads = [None]*2
+        p0.localTimer = 0
+        p1.localTimer = 0
         for i, p in enumerate(parties):
             threads[i] = threading.Thread(target=p.bitDecompOpt, args=(p.shares[c],))
             threads[i].start()
@@ -1214,9 +1327,10 @@ def test_bitDecompOptTruth():
     
 
     print("##########################################################")
-    print("BITDECOMP TEST FOR TRUTH")
+    print("BITDECOMPOPT TEST FOR TRUTH")
     real = [int(p0.convertToBitString(MyType(s0.x+s1.x))[0]) for s0,s1 in zip(p0.shares,p1.shares)]
     calculated = [(int(s0)+int(s1)) % 2 for s0,s1 in zip(p0.bitDecompOptResults,p1.bitDecompOptResults)]
+    print(calculated)
     errors = 0
     for i, (r, c) in enumerate(zip(real,calculated)):
         if r == c:
@@ -1231,6 +1345,9 @@ def test_bitDecompOptTruth():
     print("#########################################################")
     print("TIME TAKEN",end - start)
     print("bytes sent:",bytessent)
+    print("Local computation times")
+    print("p0:",sum(local_times0))
+    print("p1:",sum(local_times1))
     print("")
 
 def test_bitDecompOpt_time():
@@ -1375,10 +1492,15 @@ def test_computeMSBTruth():
     global bytessent
     
     bytessent = 0
-
+    p0SC = p0.localTimer
+    p1SC = p1.localTimer
+    p2SC = p2.localTimer
     start = time.time()
     for c in range(len(p0.converted_shares)):
         threads = [None]*len(parties)
+        p0.localTimer = 0
+        p1.localTimer = 0
+        p2.localTimer = 0
         for i, p in enumerate(parties):
            
             threads[i] = threading.Thread(target=p.computeMSB, args=(p.converted_shares[c],))
@@ -1415,6 +1537,10 @@ def test_computeMSBTruth():
     print(f"Errors: {errors}/{len(p0.shares)}")
     print("ComputeMSB time:",end - start)
     print("Bytes sent in ComputeMSB:",bytessent)
+    print("Local computation times")
+    print("p0:",sum(local_times0)+p0SC)
+    print("p1:",sum(local_times1)+p1SC)
+    print("p2:",sum(local_times2)+p2SC)
     print("#########################################################")
     print("")
 
