@@ -27,9 +27,9 @@ times_list = []
 subRoutineTimer1 = 0
 subRoutineByteCounter1 = 0
 
-p0address = '161.35.80.114'
-p1address = '68.183.70.159'
-p2address = '178.128.44.8'
+p0address = '64.227.75.123' #amsterdam
+p1address = '165.22.64.58' #frankfurt
+p2address = '64.227.33.82' #london 
 
 communication_On = True
 
