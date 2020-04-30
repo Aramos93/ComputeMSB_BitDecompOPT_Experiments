@@ -110,8 +110,8 @@ p0 london
 p1 frankfurt
 p0-p1 16.2 ms
 
-TIME TAKEN 95.53521800041199                                                                                         
-bytes sent: 9073000
+TIME TAKEN 86.53521800041199                                                                                         
+bytes sent: 835000
 
 -----------------------------------------------------------------
 
@@ -149,3 +149,43 @@ p1: 0.1845846176147461
 p2: 0.09131217002868652
 Avg: 0.147
 Avg per ComputeMSB call: 0.000147
+
+
+
+
+'''''''''''''''''''''''''''''''
+
+
+New servers
+Amsterdam-Frankfurt 18.21 ms
+Amsterdam-London 8.05 ms
+Frankfurt-London 12.23 ms
+
+
+------------------------------------------------------
+ComputeMSB
+Amsterdam-Frankfurt-London
+
+Total time taken: 101.52208757400513 s
+Total bytes sent: 416984
+------------------------------------------------------
+Bitdecompopt
+1000
+Amsterdam-Frankfurt 18.21 ms
+
+TIME TAKEN 82.47195625305176 s
+bytes sent: 835000
+------------------------------------------------------
+Bitdecompopt
+1000
+Amsterdam-London 8.05 ms
+
+TIME TAKEN 68.58840918540955 s
+bytes sent: 835000
+------------------------------------------------------
+Bitdecompopt
+1000
+Frankfurt-London 12.23 ms
+
+TIME TAKEN 72.58840918540955 s
+bytes sent: 835000
