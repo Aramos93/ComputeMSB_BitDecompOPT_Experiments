@@ -751,8 +751,8 @@ class Party:
                 A[i] = a; B[i] = b; C[i] = c
             
         
-            E_0_list = [MyType(x - a).x for x,a in zip(X,A)]
-            F_0_list = [MyType(y - b).x for y,b in zip(Y,B)]
+            E_0_list = [MyType(x - a).x % 2 for x,a in zip(X,A)]
+            F_0_list = [MyType(y - b).x % 2 for y,b in zip(Y,B)]
             
             toSend = [E_0_list, F_0_list]
             end = time.time()
@@ -760,10 +760,10 @@ class Party:
             self.sendShares("p1", toSend)
             E_1_list, F_1_list = literal_eval(self.recvShares("p0"))
             start2 = time.time()
-            E = [MyType(e0+e1).x for e0,e1 in zip(E_0_list,E_1_list)]
-            F = [MyType(f0+f1).x for f0,f1 in zip(F_0_list,F_1_list)]
+            E = [MyType(e0+e1).x % 2 for e0,e1 in zip(E_0_list,E_1_list)]
+            F = [MyType(f0+f1).x % 2 for f0,f1 in zip(F_0_list,F_1_list)]
 
-            res = [MyType((x*f) + (e*y) + c).x for x,f,e,y,c in zip(X,F,E,Y,C)]
+            res = [MyType((x*f) + (e*y) + c).x % 2 for x,f,e,y,c in zip(X,F,E,Y,C)]
             end2 = time.time()
             self.localTimer += end2-start2
             self.multListResults.append(res)
@@ -775,8 +775,8 @@ class Party:
                 a,b,c = self.triplets.pop(0)
                 A[i] = a; B[i] = b; C[i] = c    
         
-            E_1_list = [MyType(x - a).x for x,a in zip(X,A)]
-            F_1_list = [MyType(y - b).x for y,b in zip(Y,B)]
+            E_1_list = [MyType(x - a).x % 2 for x,a in zip(X,A)]
+            F_1_list = [MyType(y - b).x % 2 for y,b in zip(Y,B)]
             toSend = [E_1_list, F_1_list]
             end = time.time()
             self.localTimer += end-start
@@ -784,10 +784,10 @@ class Party:
             E_0_list, F_0_list = literal_eval(self.recvShares("p1"))
             start2 = time.time()
                
-            E = [MyType(e0+e1).x for e0,e1 in zip(E_0_list,E_1_list)]
-            F = [MyType(f0+f1).x for f0,f1 in zip(F_0_list,F_1_list)]
+            E = [MyType(e0+e1).x % 2 for e0,e1 in zip(E_0_list,E_1_list)]
+            F = [MyType(f0+f1).x % 2 for f0,f1 in zip(F_0_list,F_1_list)]
 
-            res = [MyType(-1*(e * f) + (x * f) + (e * y) + c).x for x,f,e,y,c in zip(X,F,E,Y,C)]
+            res = [MyType(-1*(e * f) + (x * f) + (e * y) + c).x % 2 for x,f,e,y,c in zip(X,F,E,Y,C)]
             end2 = time.time()
             self.localTimer += end2-start2
             self.multListResults.append(res)

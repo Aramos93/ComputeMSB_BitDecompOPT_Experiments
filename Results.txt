@@ -118,7 +118,7 @@ bytes sent: 835000
 BitDecompOpt (local 1000 inputs)
 
 TIME TAKEN 31.83810567855835
-bytes sent: 3849853
+bytes sent: 1674000
 
 Time taken for local computations:
 p0: 10.938763618469238
