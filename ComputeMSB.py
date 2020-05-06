@@ -594,10 +594,10 @@ class Party:
             E_1_list = [BigMat(e) for e in E_1]
             F_1_list = [BigMat(f) for f in F_1]
             
-            E = [((BigMat(e0) + e1) % L) for e0,e1 in zip(E_0_list,E_1_list)]
-            F = [((BigMat(f0) + f1) % L) for f0,f1 in zip(F_0_list,F_1_list)]
+            E = [((BigMat(e0) + e1) % 2) for e0,e1 in zip(E_0_list,E_1_list)]
+            F = [((BigMat(f0) + f1) % 2) for f0,f1 in zip(F_0_list,F_1_list)]
 
-            res = [(((x @ f) + (e @ y) + c) % L) for x,f,e,y,c in zip(X,F,E,Y,C)]
+            res = [(((x @ f) + (e @ y) + c) % 2) for x,f,e,y,c in zip(X,F,E,Y,C)]
             end2 = time.time()
             self.localTimer += end2-start2
             self.matMultListResults = res
@@ -626,8 +626,8 @@ class Party:
             F_0_list = [BigMat(f) for f in F_0]
             
             
-            E = [((e0 + BigMat(e1)) % L) for e0,e1 in zip(E_0_list,E_1_list)]
-            F = [((f0 + BigMat(f1)) % L) for f0,f1 in zip(F_0_list,F_1_list)]
+            E = [((e0 + BigMat(e1)) % 2) for e0,e1 in zip(E_0_list,E_1_list)]
+            F = [((f0 + BigMat(f1)) % 2) for f0,f1 in zip(F_0_list,F_1_list)]
 
             res = [((((e @ f)*-1) + (x @ f) + (e @ y) + c) % 2) for x,f,e,y,c in zip(X,F,E,Y,C)]
             end2 = time.time()
@@ -1777,7 +1777,7 @@ def print_total_data():
 # test_bitDecompTruth()
 # test_shareConvertTruth()
 # test_shareConvert()
-test_computeMSBTruth()
+# test_computeMSBTruth()
 # test_computeMSB()
 # test_mult()   
 # test_privateCompare()
@@ -1785,7 +1785,7 @@ test_computeMSBTruth()
 # test_reconstruct2PC()
 # test_MyType()
 # test_connection()
-# test_bitDecompOptTruth()
+test_bitDecompOptTruth()
 # test_bitDecompOpt_time()
 # test_mult2()
 
