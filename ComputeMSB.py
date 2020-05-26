@@ -20,7 +20,7 @@ cnet_0 = ComposeNet(L)
 cnet_1 = ComposeNet(L)
 p0address = '127.0.0.1'
 p1address = '127.0.0.1'
-p2address = '127.0.0.1'
+p2address = '127.0.0.1' 
 lock = threading.Lock()
 bytessent = 0
 bytes_list = []
@@ -41,6 +41,7 @@ subRoutineByteCounter1 = 0
 
 ##################################################### Utilities ######################################################
 
+#Given a BigMat Matrix M, will return two shares in Z**L of the matrix.
 def generateMatrixShares(M):
     M_0 = BigMat([[random.randint(0, (2**L)-1), random.randint(0, (2**L)-1)],[random.randint(0, (2**L)-1), random.randint(0, (2**L)-1)]])
     M_1 = (M - M_0) % 2**L
@@ -56,6 +57,7 @@ def generateMyTypeShares(x, in_zl=True):
 
     return MyType(r, is_zl=in_zl), MyType(x-r, is_zl=in_zl)
 
+#Will generate one set of beaver triplets in Z**L
 def generateBeaverTriplets(N):
     for _ in range(N):
         a = random.randint(0, 2**L)
@@ -69,6 +71,7 @@ def generateBeaverTriplets(N):
         p0.triplets.append([a_0.x, b_0.x, c_0.x])
         p1.triplets.append([a_1.x, b_1.x, c_1.x])
 
+#Will generate one set of matrix beaver triplets in Z**L
 def generateMatBeaverTriplets(N):
     for _ in range(N):
         A = BigMat([[random.randint(0, (2**L)-1), random.randint(0, (2**L)-1)],[random.randint(0, (2**L)-1), random.randint(0, (2**L)-1)]])
@@ -86,6 +89,9 @@ def generateMatBeaverTriplets(N):
 ######################################################################################################################
 
 ########################################## MyType (Convert number to ZL or ZL-1) #####################################
+#Wrapper class for holding integers in Z**L or (Z**L) - 1. We have used this class to make sure that we never
+#let integers flow over the ring size defined earlier.
+
 class MyType:
     def __init__(self, x, is_zl = True): #if True --> Zl else --> ZL-1
         self.L = L
@@ -110,6 +116,7 @@ class Party:
     def __init__(self, partyName):
         # Connection Initialization
         
+        #lookup table for socket communication between parties, each way in the connection uses a specific port. Can be changed arbitrarily.
         self.lookup = {  "p0_send_to_p1":2011,
                     "p0_send_to_p2":2021,
                     "p1_send_to_p0":2101,
@@ -123,6 +130,9 @@ class Party:
                     "p2_recv_from_p0":2200,
                     "p2_recv_from_p1":2210
                 }
+
+        #This part instantiates sockets and binds to ports.
+
         if(partyName == 0):
             self.socket01send = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
             self.socket01send.bind((p1address,self.lookup.get('p0_send_to_p1')))
@@ -153,6 +163,7 @@ class Party:
             self.socket21recv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.socket21recv.bind((p2address,self.lookup.get('p2_recv_from_p1')))
         
+
         self.listenBuffer = {}
         
         
@@ -174,6 +185,7 @@ class Party:
         self.triplets = []
         self.bitDecompOptResults = []
         self.localTimer = 0
+        #Read shares from files.
         if partyName == 0:
             self.readFile(file1)
         elif partyName == 1:
@@ -290,6 +302,8 @@ class Party:
     
    
     ################ Send and Receive shares ###################
+    #The mark is used to uniquely identify data for different subprocesses.
+    #If no mark is set then the mark is set to 'empty'
     def sendShares(self, target, value, mark="empty"):
         pickled = pickle.dumps([value,mark])
         thread = threading.Thread(target=self.send,kwargs=dict(sendTo=target, value=pickled))
@@ -302,6 +316,7 @@ class Party:
                 data = self.listenBuffer.pop(mark)
                 return(repr(data))
             else:
+                #Allow other threads on the cpu, there is a significant speedup when this sleep is introduced
                 time.sleep(0.0000001)
                 continue
           
@@ -340,6 +355,7 @@ class Party:
                 data = self.listenBuffer.pop(mark)
                 return(int(data))
             else:
+                #Allow other threads on the cpu, there is a significant speedup when this sleep is introduced
                 time.sleep(0.0000001)
                 continue
                 
@@ -388,7 +404,7 @@ class Party:
 
         return share0, share1
     
-
+    #SecureNN's version of private compare. Using 3 parties.
     def privateCompare(self, x=[], r=MyType(0), beta=MyType(-1)):
         start = time.time()
         if self.party != "p2":
@@ -493,7 +509,7 @@ class Party:
     def dummyPC(self, x, r, beta):   
         return beta.x ^ (x.x > r.x)
 
-
+    #Mimicks The Genome Papers matrix multiplication function, with precomputed beaver triplets.
     def matMult(self,X,Y):
         if self.party == "p0":
             A, B, C = self.matTriplets[0]; self.matTriplets.pop(0)
@@ -526,7 +542,7 @@ class Party:
             self.matMultResults.append(res)
             return res
 
-    
+    #Same as MatMult, but with a list of values to multiply together. (Everything is mod 2 since it is only used in BitDecompOpt)
     def matMultList(self, X, Y, id=0):
         length = len(X)
         if self.party == "p0":
@@ -589,7 +605,7 @@ class Party:
             self.matMultListResults = res
             return res
 
-
+    #SecureNN's 3 party multiplication protocol without distributed beaver triplets, for multiplying 2 shared values together.
     def mult(self, x=MyType(0), y=MyType(0)):
         if self.party == "p0":
             shares_0 = literal_eval(self.recvShares("p0","shares_0"))
