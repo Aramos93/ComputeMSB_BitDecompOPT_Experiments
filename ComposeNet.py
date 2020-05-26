@@ -78,5 +78,4 @@ class ComposeNet:
             diff = y-x
             for i in range(1,10):
                 if(2**i > diff):
-                    #print(i+1)
                     return i+1

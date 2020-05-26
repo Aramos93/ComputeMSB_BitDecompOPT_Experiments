@@ -4,7 +4,7 @@ import random as rand
 
 
 L = 64
-N = 1000
+N = 10
 secrets = []
 shares_0 = []
 shares_1 = []
@@ -41,6 +41,5 @@ writeSharesToFile()
 print(secrets)
 print(shares_0)
 print(shares_1)
-#print([sum(x) for x in zip(shares_0, shares_1)])
 
 
